@@ -68,18 +68,18 @@ class IntegralScenarioSolution(object):
         for u in substrate.nodes:
             for ntype in substrate.node[u]["supported_types"]:
                 substrate_resources[ntype, u] = substrate.node[u]["capacity"][ntype]
-        for req, mapping in list(self.request_mapping.items()):
+        for req, mapping in self.request_mapping.items():
             if mapping is None:
                 continue
-            for i, u in list(mapping.mapping_nodes.items()):
+            for i, u in mapping.mapping_nodes.items():
                 t = req.get_type(i)
                 demand = req.get_node_demand(i)
                 substrate_resources[t, u] -= demand
-            for ij, uv_list in list(mapping.mapping_edges.items()):
+            for ij, uv_list in mapping.mapping_edges.items():
                 demand = req.get_edge_demand(ij)
                 for uv in uv_list:
                     substrate_resources[uv] -= demand
-        for res, remaining_cap in list(substrate_resources.items()):
+        for res, remaining_cap in substrate_resources.items():
             if remaining_cap < 0:
                 log.error("resource {} violated capacity by {}".format(res, -remaining_cap))
                 result = False
@@ -100,7 +100,7 @@ class IntegralScenarioSolution(object):
         """ checks if demand of all request nodes and edges is fullfilled by
         substrate capacity
         """
-        for i, u_i in list(mapping.mapping_nodes.items()):
+        for i, u_i in mapping.mapping_nodes.items():
             i_demand = request.get_node_demand(i)
             i_type = request.get_type(i)
             u_i_capacity = substrate.get_node_type_capacity(u_i, i_type)
@@ -120,7 +120,7 @@ class IntegralScenarioSolution(object):
         s = ""
         for req in self.scenario.requests:
             s += "\t" + str(req) + "\n"
-            if req in list(self.request_mapping.keys()):
+            if req in self.request_mapping:
                 s += "\t" + str(self.request_mapping[req]) + "\n"
             else:
                 s += "\tnot embedded no mapping \n"

@@ -23,6 +23,7 @@
 
 from collections import defaultdict
 import random
+import warnings
 import numpy as np
 
 
@@ -200,7 +201,7 @@ def is_connected_undirected_edge_representation(edge_list):
 
     for i,j in edge_list:
 
-        if i in list(node_to_connected_component_id.keys()) and j in list(node_to_connected_component_id.keys()):
+        if i in node_to_connected_component_id and j in node_to_connected_component_id:
             #both nodes are already known
             connected_component_i = node_to_connected_component_id[i]
             connected_component_j = node_to_connected_component_id[j]
@@ -214,13 +215,13 @@ def is_connected_undirected_edge_representation(edge_list):
                 connected_component_id_to_nodes[connected_component_i].extend(connected_component_id_to_nodes[connected_component_j])
                 del connected_component_id_to_nodes[connected_component_j]
 
-        elif i in list(node_to_connected_component_id.keys()) and j not in list(node_to_connected_component_id.keys()):
+        elif i in node_to_connected_component_id and j not in node_to_connected_component_id:
             #add j to connected component of i
             connected_component_i = node_to_connected_component_id[i]
             node_to_connected_component_id[j] = connected_component_i
             connected_component_id_to_nodes[connected_component_i].append(j)
 
-        elif i not in list(node_to_connected_component_id.keys()) and j in list(node_to_connected_component_id.keys()):
+        elif i not in node_to_connected_component_id and j in node_to_connected_component_id:
             # add i to connected component of j
             connected_component_j = node_to_connected_component_id[j]
             node_to_connected_component_id[i] = connected_component_j
@@ -233,7 +234,7 @@ def is_connected_undirected_edge_representation(edge_list):
             node_to_connected_component_id[j] = new_connected_component_id
             connected_component_id_to_nodes[new_connected_component_id].extend([i,j])
 
-    if len(list(connected_component_id_to_nodes.keys())) == 1:
+    if len(connected_component_id_to_nodes.items()) == 1:
         return True
     else:
         return False
@@ -664,7 +665,8 @@ class Substrate(Graph):
             return self.node[node]["capacity"]
         else:
             if len(self.node[node]["capacity"]) > 1:
-                raise RuntimeError("Type has to be specified when a node hosts more than one type.")
+                warnings.warn("Type should be specified when a node hosts more than one type by using the get_node_type_capacity function. Returning the dictionary instead. ")
+                return self.node[node]["capacity"]
             else:
                 value = next(iter(self.node[node]['capacity'].values()))
                 return value

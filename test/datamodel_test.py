@@ -153,7 +153,8 @@ class TestSubstrate:
         self.substrate.add_node('v', ["t1"], {"t1": 2}, {"t1": 2})
         self.substrate.add_node('w', ["t1"], {"t1": 1.5}, {"t1": 2})
 
-        assert self.substrate.get_node_capacity("v") == {"t1": 2}
+        assert self.substrate.get_node_capacity("v") == 2  # as only a single type exist
+        assert self.substrate.get_node_capacity("u") == {"t1": 1, "t2": 0.5} # as several types exist
         assert self.substrate.get_node_type_capacity("u", "t1") == 1
         assert self.substrate.average_node_capacity("t1") == pytest.approx(1.5)
         assert self.substrate.get_total_node_resources("t1") == pytest.approx(4.5)

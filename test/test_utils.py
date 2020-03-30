@@ -26,10 +26,10 @@ Some convenience functions to generate simple, artificial substrate and request
 graphs and scenarios for testing purposes.
 """
 
-from . import datamodel, scenariogeneration
+from alib3 import datamodel, scenariogeneration
 
 
-def get_test_request(number_of_nodes, name="test_request", demand=1.0):
+def get_clique_request(number_of_nodes, name="test_request", demand=1.0):
     """
     Generate a complete graph as a single request.
 
@@ -108,9 +108,9 @@ def get_test_scenario(number_of_requests=1,
     requests = []
     for i in range(1, 1 + number_of_requests):
         name = "test_req_{}".format(i)
-        req = get_test_request(request_size,
-                               name=name,
-                               demand=request_demand)
+        req = get_clique_request(request_size,
+                                 name=name,
+                                 demand=request_demand)
         requests.append(req)
     return datamodel.Scenario("test_scenario", sub, requests)
 

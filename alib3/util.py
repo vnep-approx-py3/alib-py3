@@ -538,6 +538,16 @@ def graph_viz_edge_color_according_to_request_list(edge_set_list, colors=None):
     return inner
 
 
+def get_single_value_from_dictionary(dictionary):
+    assert len(dictionary.values()) == 1
+    return next(iter(dictionary.values()))
+
+
+def get_single_key_from_dictionary(dictionary):
+    assert len(dictionary.keys()) == 1
+    return next(iter(dictionary.keys()))
+
+
 if __name__ == "__main__":
     log = initialize_root_logger(None, logging.CRITICAL, logging.DEBUG)
 else:

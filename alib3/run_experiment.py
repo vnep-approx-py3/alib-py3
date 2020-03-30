@@ -196,14 +196,14 @@ class ExecutionParameters(object):
                 if key == "ALG_ID":
                     set_exec_ids_single_lookup = self.reverse_lookup[value]["all"]
                 elif key == "ALGORITHM_PARAMETERS":
-                    for algo in list(self.reverse_lookup.keys()):
-                        for algo_para in list(value.keys()):
+                    for algo in self.reverse_lookup.keys():
+                        for algo_para in value.keys():
                             if algo_para in self.reverse_lookup[algo]["ALGORITHM_PARAMETERS"]:
                                 result = self._helper_get_exec_id(self.reverse_lookup[algo]["ALGORITHM_PARAMETERS"][algo_para][value[algo_para]])
                                 set_exec_ids_single_lookup = set_exec_ids_single_lookup.union(result)
                 elif key == "GUROBI_PARAMETERS":
-                    for algo in list(self.reverse_lookup.keys()):
-                        for gurobi_para in list(value.keys()):
+                    for algo in self.reverse_lookup.keys():
+                        for gurobi_para in value.keys():
                             if gurobi_para in self.reverse_lookup[algo]["GUROBI_PARAMETERS"]:
                                 result = self._helper_get_exec_id(self.reverse_lookup[algo]["GUROBI_PARAMETERS"][gurobi_para][value[gurobi_para]])
                                 set_exec_ids_single_lookup = set_exec_ids_single_lookup.union(result)

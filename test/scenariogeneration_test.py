@@ -8,7 +8,8 @@ import yaml
 
 import numpy
 
-from alib3 import scenariogeneration, datamodel, test_utils, util
+from alib3 import scenariogeneration, datamodel, util
+from test import test_utils
 import pytest
 
 TEST_BASE_DIR = os.path.abspath(os.path.dirname(__file__))

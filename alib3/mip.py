@@ -132,7 +132,7 @@ class ClassicMCFModel(modelcreator.AbstractEmbeddingModelCreator):
                 expr = LinExpr(
                     [(-1.0, self.var_embedding_decision[req])] +
                     [(1.0, self.var_y[req][i][snode]) for snode
-                     in list(self.var_y[req][i].keys())]
+                     in self.var_y[req][i]]
                 )
                 constr_name = modelcreator.construct_name("flow_induction",
                                                           req_name=req.name,

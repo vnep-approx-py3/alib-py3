@@ -38,6 +38,8 @@ import time
 import yaml
 from collections import deque, namedtuple
 from random import Random
+import warnings
+import traceback
 
 
 import numpy.random
@@ -106,9 +108,9 @@ def verify_completeness_of_scenario_parameters(scenario_parameter_space):
             errors.append("Scenario parameters require task {}, but do not provide a strategy for it!".format(task))
             continue
         for strategy_dict in scenario_parameter_space[task]:
-            strategy = list(strategy_dict.keys())[0]
+            strategy = util.get_single_key_from_dictionary(strategy_dict)
             class_param_dict = strategy_dict[strategy]
-            strategy_class_name = list(class_param_dict.keys())[0]
+            strategy_class_name = util.get_single_key_from_dictionary(class_param_dict)
             if strategy_class_name not in globals():
                 errors.append("Could not resolve class {}, employed in strategy {} for task {}.".format(
                     strategy_class_name, strategy, task
@@ -123,7 +125,7 @@ def verify_completeness_of_scenario_parameters(scenario_parameter_space):
                 ))
                 continue
             expected = set(strategy_class.EXPECTED_PARAMETERS)
-            parameters = set(list(class_param_dict.values())[0].keys())
+            parameters = set(util.get_single_value_from_dictionary(class_param_dict).keys())
             if expected - parameters:
                 msg = "The following parameters for {task}, {strategy} were not defined but are required by {strategy_class}:\n        {missing}".format(
                     task=task,
@@ -197,10 +199,9 @@ class ScenarioParameterContainer(object):
         for scenario_generation_task, scenario_task_strategy_list in self.scenarioparameter_room.items():
             product_dict[scenario_generation_task] = {}
             for scenario_task_strategy in scenario_task_strategy_list:
-                # TODO: make this more clear, and add some sanity checks ensuring that scenario_task_strategy contains exactly 1 strategy
-                strategy_name = list(scenario_task_strategy.keys())[0]
-                strategy_class = next(iter(list(scenario_task_strategy.values())[0].keys()))
-                strategy_parameter_space = next(iter(list(scenario_task_strategy.values())[0].values()))
+                strategy_name = util.get_single_key_from_dictionary(scenario_task_strategy)
+                strategy_class = util.get_single_key_from_dictionary(util.get_single_value_from_dictionary(scenario_task_strategy))
+                strategy_parameter_space = util.get_single_value_from_dictionary(util.get_single_value_from_dictionary(scenario_task_strategy))
                 self.make_values_immutable(strategy_parameter_space)
                 inner_parameter_combinations = ScenarioParameterContainer._expand_innermost_parameter_space(strategy_parameter_space)
                 expanded_solution_parameters = {strategy_class: inner_parameter_combinations}
@@ -227,7 +228,7 @@ class ScenarioParameterContainer(object):
             class_list = [list(product_dict[tasks[i]][sol].keys())[0] for (i, sol) in enumerate(strategy_combination)]
 
             # tuple_task_parameter_list contains the parameter space for each
-            tuple_task_parameter_list = tuple(list(product_dict[tasks[i]][sol].values())[0] for (i, sol) in enumerate(strategy_combination))
+            tuple_task_parameter_list = tuple(util.get_single_value_from_dictionary(product_dict[tasks[i]][sol]) for (i, sol) in enumerate(strategy_combination))
 
             # expand the parameter spaces of all strategies to parameter dictionaries:
             for combination in itertools.product(*tuple_task_parameter_list):
@@ -281,7 +282,7 @@ class ScenarioParameterContainer(object):
         self.scenario_parameter_dict = {}
         self.scenario_triple = {}
         """
-        overlap = set(self.scenario_triple.keys()).intersection(list(other.scenario_triple.keys()))
+        overlap = set(self.scenario_triple.keys()).intersection(set(other.scenario_triple.keys()))
         if overlap:
             msg = "Cannot merge scenario parameter containers due to overlapping scenario IDs {}".format(
                 overlap
@@ -291,7 +292,7 @@ class ScenarioParameterContainer(object):
         self.scenario_parameter_combination_list += other.scenario_parameter_combination_list
         self.scenario_triple.update(other.scenario_triple)
 
-        for i, (sp, scenario) in list(other.scenario_triple.items()):
+        for i, (sp, scenario) in other.scenario_triple.items():
             self.fill_reverselookup_dict(sp, i)
 
         if not isinstance(self.scenarioparameter_room, list):
@@ -309,13 +310,13 @@ class ScenarioParameterContainer(object):
         for task in SCENARIO_GENERATION_TASKS:
             if task not in sp:
                 continue
-            strat_id = list(sp[task].keys())[0]
+            strat_id = util.get_single_key_from_dictionary(sp[task])
             spd[task].setdefault(strat_id, dict())
             spd[task][strat_id].setdefault('all', set())
             spd[task][strat_id]['all'].add(currentindex)
             # spd[task][sp[task].keys()[0]] = sp[task][sp[task].keys()[0]]
             for strat in sp[task]:
-                spd[task][strat].setdefault(list(sp[task][strat].keys())[0], dict())
+                spd[task][strat].setdefault(util.get_single_key_from_dictionary(sp[task][strat]), dict())
                 for class_name in sp[task][strat]:
                     spd[task][strat].setdefault(class_name, dict())
                     for key, val in sp[task][strat][class_name].items():
@@ -432,18 +433,18 @@ def build_scenario(i_sp_tup):
                                       objective=datamodel.Objective.MIN_COST)
         top_zoo_reader = TopologyZooReader(logger=logger)
         top_zoo_reader.apply(sp, scenario)
-        class_name_request_generator = next(iter(list(sp[REQUEST_GENERATION_TASK].values())[0].keys()))
+        class_name_request_generator = util.get_single_key_from_dictionary(util.get_single_value_from_dictionary(sp[REQUEST_GENERATION_TASK]))
         global_name_space = globals()
         rg = global_name_space[class_name_request_generator](logger=logger)
         if datamanager_dict is not None:
             rg.register_data_manager_dict(datamanager_dict)
         rg.apply(sp, scenario)
         if NODE_PLACEMENT_TASK in sp:
-            class_name_npr = next(iter(list(sp[NODE_PLACEMENT_TASK].values())[0].keys()))
+            class_name_npr = util.get_single_key_from_dictionary(util.get_single_value_from_dictionary(sp[NODE_PLACEMENT_TASK]))
             npr = global_name_space[class_name_npr](logger=logger)
             npr.apply(sp, scenario)
         if PROFIT_CALCULATION_TASK in sp:
-            class_name_profit_calc = next(iter(list(sp[PROFIT_CALCULATION_TASK].values())[0].keys()))
+            class_name_profit_calc = util.get_single_key_from_dictionary(util.get_single_value_from_dictionary(sp[PROFIT_CALCULATION_TASK]))
             pc = global_name_space[class_name_profit_calc](logger=logger)
             pc.apply(sp, scenario)
             scenario.objective = datamodel.Objective.MAX_PROFIT
@@ -495,7 +496,7 @@ class AbstractRequestGenerator(ScenariogenerationTask):
         self._data_manager_dict = data_manager_dict
 
     def apply(self, scenario_parameters, scenario):
-        class_raw_parameters_dict = list(scenario_parameters[REQUEST_GENERATION_TASK].values())[0]
+        class_raw_parameters_dict = util.get_single_value_from_dictionary(scenario_parameters[REQUEST_GENERATION_TASK])
         class_name = self.__class__.__name__
         if class_name not in class_raw_parameters_dict:
             raise RequestGenerationError("")
@@ -1305,7 +1306,7 @@ class TreewidthRequestGenerator(AbstractRequestGenerator):
             self._undirected_graph_storage_lock = graph_storage_lock
             if self._average_edge_numbers_of_treewidth is None:
                 self._average_edge_numbers_of_treewidth = {}
-            if self._treewidth not in list(self._average_edge_numbers_of_treewidth.keys()):
+            if self._treewidth not in self._average_edge_numbers_of_treewidth.keys():
                 with self._undirected_graph_storage_lock:
                     self._average_edge_numbers_of_treewidth[
                         self._treewidth] = self._undirected_graph_storage.get_average_number_of_edges_for_parameter(
@@ -1333,7 +1334,7 @@ class TreewidthRequestGenerator(AbstractRequestGenerator):
         else:
             if self._average_edge_numbers_of_treewidth is None:
                 self._average_edge_numbers_of_treewidth = {}
-            if self._treewidth not in list(self._average_edge_numbers_of_treewidth.keys()):
+            if self._treewidth not in self._average_edge_numbers_of_treewidth:
                 with self._undirected_graph_storage_lock:
                     self._average_edge_numbers_of_treewidth[self._treewidth] = self._undirected_graph_storage.get_average_number_of_edges_for_parameter(self._treewidth)
             self._expected_number_of_request_edges = 0
@@ -1369,7 +1370,7 @@ class TreewidthRequestGenerator(AbstractRequestGenerator):
         while True:
             # round as long as there exists a graph with this number of nodes
             self._number_of_nodes = random.randint(self._min_number_nodes, self._max_number_nodes)
-            if self._treewidth == 1 or self._number_of_nodes in list(self._average_edge_numbers_of_treewidth[self._treewidth].keys()):
+            if self._treewidth == 1 or self._number_of_nodes in self._average_edge_numbers_of_treewidth[self._treewidth]:
                 break
             else:
                 self.logger.warning("The undirected graph storage does not contain graphs for treewidth {} having exactly {} nodes.".format(self._treewidth, self._number_of_nodes))
@@ -1396,7 +1397,7 @@ class TreewidthRequestGenerator(AbstractRequestGenerator):
         connected_component_id_to_nodes = {i: [str(i)] for i in range(1, number_of_nodes + 1)}
         result = []
         current_edge_index = 0
-        while len(list(connected_component_id_to_nodes.keys())) > 1:
+        while len(connected_component_id_to_nodes) > 1:
             # check if adding edge would violate tree property
             i, j = all_edges[current_edge_index]
             component_i = node_to_connected_component_id[i]
@@ -1449,21 +1450,23 @@ class TreewidthRequestGenerator(AbstractRequestGenerator):
             req.add_edge(i, j, self._edge_demand)
 
         if self.DEBUG_MODE:
-            from vnep_approx import treewidth_model
-            # check connectdness of request graph
-            tmp_edges = list(req.edges)
-            tmp_undir_req_graph = datamodel.get_undirected_graph_from_edge_representation(tmp_edges)
-            assert tmp_undir_req_graph.check_connectedness()
-            td_comp = treewidth_model.TreeDecompositionComputation(tmp_undir_req_graph)
-            tree_decomp = td_comp.compute_tree_decomposition()
-            assert tree_decomp.width == self._treewidth
-            td_comp = treewidth_model.TreeDecompositionComputation(req)
-            tree_decomp = td_comp.compute_tree_decomposition()
-            assert tree_decomp.width == self._treewidth
-            sntd = treewidth_model.SmallSemiNiceTDArb(tree_decomp, req)
-            self.logger.info("SUCCESSFULLY PASSED TESTS [DEBUG_MODE=TRUE]")
-            assert len(req.nodes) == self._number_of_nodes
-
+            # check connectedness of request graph; the functionality is included in the vnep_approx3
+            try:
+                from vnep_approx3 import treewidth_model
+                tmp_edges = list(req.edges)
+                tmp_undir_req_graph = datamodel.get_undirected_graph_from_edge_representation(tmp_edges)
+                assert tmp_undir_req_graph.check_connectedness()
+                td_comp = treewidth_model.TreeDecompositionComputation(tmp_undir_req_graph)
+                tree_decomp = td_comp.compute_tree_decomposition()
+                assert tree_decomp.width == self._treewidth
+                td_comp = treewidth_model.TreeDecompositionComputation(req)
+                tree_decomp = td_comp.compute_tree_decomposition()
+                assert tree_decomp.width == self._treewidth
+                sntd = treewidth_model.SmallSemiNiceTDArb(tree_decomp, req)
+                self.logger.info("SUCCESSFULLY PASSED TESTS [DEBUG_MODE=TRUE]")
+                assert len(req.nodes) == self._number_of_nodes
+            except Exception as e:
+                warnings.warn("Could (probably) not load the vnep_approx3 library even though the debug mode is enabled. Please install the vnep_approx3 library or check the following stacktrace for any other exception.\n{}".format(traceback.format_exc()))
         return req
 
     def _abort(self):
@@ -1479,10 +1482,10 @@ class AbstractProfitCalculator(ScenariogenerationTask):
         super(AbstractProfitCalculator, self).__init__(logger)
 
     def apply(self, scenario_parameters, scenario):
-        class_raw_parameters_dict = list(scenario_parameters[PROFIT_CALCULATION_TASK].values())[0]
+        class_raw_parameters_dict = util.get_single_value_from_dictionary(scenario_parameters[PROFIT_CALCULATION_TASK])
         class_name = self.__class__.__name__
         if class_name not in class_raw_parameters_dict:
-            valid_class_str = ", ".join(str(c) for c in list(class_raw_parameters_dict.keys()))
+            valid_class_str = ", ".join(str(c) for c in class_raw_parameters_dict)
             raise ScenarioGeneratorError("{class_name} is not a valid profit calculation tasks (expected one of {valid_classes})".format(
                 class_name=class_name, valid_classes=valid_class_str
             ))
@@ -1636,7 +1639,7 @@ class AbstractNodeMappingRestrictionGenerator(ScenariogenerationTask):
         super(AbstractNodeMappingRestrictionGenerator, self).__init__(logger)
 
     def apply(self, scenario_parameters, scenario):
-        class_raw_parameters_dict = list(scenario_parameters[NODE_PLACEMENT_TASK].values())[0]
+        class_raw_parameters_dict = util.get_single_value_from_dictionary(scenario_parameters[NODE_PLACEMENT_TASK])
         class_name = self.__class__.__name__
         if class_name not in class_raw_parameters_dict:
             raise ScenarioGeneratorError("")
@@ -1755,7 +1758,7 @@ class TopologyZooReader(ScenariogenerationTask):
         self._raw_nx_graphs = {}
 
     def apply(self, scenario_parameters, scenario):
-        class_raw_parameters_dict = list(scenario_parameters[SUBSTRATE_GENERATION_TASK].values())[0]
+        class_raw_parameters_dict = util.get_single_value_from_dictionary(scenario_parameters[SUBSTRATE_GENERATION_TASK])
         class_name = self.__class__.__name__
         if class_name not in class_raw_parameters_dict:
             raise ScenarioGeneratorError("")
@@ -1797,7 +1800,7 @@ class TopologyZooReader(ScenariogenerationTask):
             for type in assigned_types[node]:
                 total_capacity_per_type[type] += raw_parameters["node_capacity"]
 
-        sum_of_capacities = sum(total_capacity_per_type[type] for type in list(total_capacity_per_type.keys()))
+        sum_of_capacities = sum(total_capacity_per_type[type] for type in total_capacity_per_type)
 
         substrate = datamodel.Substrate(topology)
 
@@ -1812,7 +1815,7 @@ class TopologyZooReader(ScenariogenerationTask):
 
         average_distance = 0
 
-        for (tail, head), dist in list(dists.items()):
+        for (tail, head), dist in dists.items():
             cost = dist
             capacity = raw_parameters["edge_capacity"]
             if raw_parameters.get("include_latencies", False):
@@ -2013,7 +2016,7 @@ def summarize_topology_zoo_graphs(min_number_nodes=10, max_number_nodes=100):
             multiple_occuring_networks[nameWithoutDate].append((network_name, dateInformation))
 
     # select only the most current graphs
-    for mNetwork in list(multiple_occuring_networks.keys()):
+    for mNetwork in multiple_occuring_networks:
         listOfNetworks = multiple_occuring_networks[mNetwork]
         bestName = None
         bestDate = None
@@ -2034,17 +2037,14 @@ def summarize_topology_zoo_graphs(min_number_nodes=10, max_number_nodes=100):
 
     # order networks according to increasing complexity
     orderedDictOfNetworks = {}
-    for network, graph in list(networks_by_name.items()):
+    for network, graph in networks_by_name:
         n = graph.get_number_of_nodes()
         if n < min_number_nodes or n > max_number_nodes:
             print("not considering graph ", network)
             continue
-        if n not in list(orderedDictOfNetworks.keys()):
+        if n not in orderedDictOfNetworks.keys():
             orderedDictOfNetworks[n] = []
         orderedDictOfNetworks[n].append((network, graph))
-
-
-
 
     numberOfgraphs = 0
     for numberOfNodes in sorted(orderedDictOfNetworks.keys()):
