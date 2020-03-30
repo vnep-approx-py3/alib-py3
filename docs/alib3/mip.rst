@@ -1,6 +1,6 @@
-``alib.mip``
+``alib3.mip``
 ============
 
-.. automodule:: alib.mip
+.. automodule:: alib3.mip
   :members:
   :undoc-members:

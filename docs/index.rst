@@ -6,16 +6,14 @@ Welcome to alib's documentation!
 .. toctree::
   :maxdepth: 1
 
-  alib/datamodel
-  alib/evaluation
-  alib/mip
-  alib/modelcreator
-  alib/run_experiment
-  alib/scenariogeneration
-  alib/solutions
-  alib/suitable_substrates
-  alib/test_utils
-  alib/util
+  alib3/cli
+  alib3/datamodel
+  alib3/mip
+  alib3/modelcreator
+  alib3/run_experiment
+  alib3/scenariogeneration
+  alib3/solutions
+  alib3/util
 
 .. only:: builder_html
 
