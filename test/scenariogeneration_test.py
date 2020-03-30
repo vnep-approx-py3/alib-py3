@@ -309,14 +309,14 @@ class TestScenarioGenerator:
 
         scenario_ids_in_reverse_lookup = set()
         spd = self.sg.scenario_parameter_container.scenario_parameter_dict
-        for task, strat_class_key_val_dict in list(spd.items()):
-            for strat, class_key_val_dict in list(strat_class_key_val_dict.items()):
+        for task, strat_class_key_val_dict in spd.items():
+            for strat, class_key_val_dict in strat_class_key_val_dict.items():
                 all_set = set()
-                for class_name, key_val_dict in list(class_key_val_dict.items()):
+                for class_name, key_val_dict in class_key_val_dict.items():
                     if class_name == "all":
                         continue
-                    for key, val_dict in list(key_val_dict.items()):
-                        for val, id_set in list(val_dict.items()):
+                    for key, val_dict in key_val_dict.items():
+                        for val, id_set in val_dict.items():
                             all_set |= id_set
                             scenario_ids_in_reverse_lookup |= id_set
                 assert all_set == spd[task][strat]["all"]
@@ -357,25 +357,25 @@ class TestScenarioGenerator:
         spd_base = copy.deepcopy(spc_base_pre_merge.scenario_parameter_dict)
         spd_other = copy.deepcopy(spc_other_pre_merge.scenario_parameter_dict)
         spd_merged = spc_base.scenario_parameter_dict
-        for task, strat_class_key_val_dict in list(spd_merged.items()):
+        for task, strat_class_key_val_dict in spd_merged.items():
             assert (task in spd_base) or (task in spd_other)
             base_strat_class_key_val_dict = spd_base.get(task, {})
             other_strat_class_key_val_dict = spd_other.get(task, {})
-            for strat, class_key_val_dict in list(strat_class_key_val_dict.items()):
+            for strat, class_key_val_dict in strat_class_key_val_dict.items():
                 assert (strat in base_strat_class_key_val_dict) or (strat in other_strat_class_key_val_dict)
                 base_class_key_val_dict = base_strat_class_key_val_dict.get(strat, {})
                 other_class_key_val_dict = other_strat_class_key_val_dict.get(strat, {})
                 assert spd_merged[task][strat]["all"] == base_class_key_val_dict.get("all", set()) | other_class_key_val_dict.get("all", set())
-                for class_name, key_val_dict in list(class_key_val_dict.items()):
+                for class_name, key_val_dict in class_key_val_dict.items():
                     if class_name == "all":
                         continue
                     assert (class_name in base_class_key_val_dict) or (class_name in other_class_key_val_dict)
                     base_key_val_dict = base_strat_class_key_val_dict.get(class_name, {})
                     other_key_val_dict = other_strat_class_key_val_dict.get(class_name, {})
-                    for key, val_dict in list(key_val_dict.items()):
+                    for key, val_dict in key_val_dict.items():
                         base_val_dict = base_class_key_val_dict.get(class_name, {}).get(key, {})
                         other_val_dict = other_class_key_val_dict.get(class_name, {}).get(key, {})
-                        for val, id_set in list(val_dict.items()):
+                        for val, id_set in val_dict.items():
                             assert id_set == base_val_dict.get(val, set()) | other_val_dict.get(val, set())
                             base_val_dict.pop(val, None)
                             other_val_dict.pop(val, None)
@@ -458,7 +458,7 @@ class TestScenarioGenerator:
 
         assert len(triple_sp) == len(triple_mp)
 
-        for triple in list(triple_sp.items()):
+        for triple in triple_sp.items():
             (index, (sp, scenario)) = triple
             (sp_sp, scenario_sp) = triple_sp[index]
             assert sp_sp == sp
