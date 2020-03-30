@@ -28,7 +28,7 @@ import itertools
 import logging
 
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -84,7 +84,7 @@ def f_generate_scenarios(scenario_output_file, parameter_file, threads, scenario
 def pretty_print(pickle_file, col_output_limit):
     data = pickle.load(pickle_file)
     pp = util.PrettyPrinter()
-    print pp.pprint(data, col_output_limit=col_output_limit)
+    print(pp.pprint(data, col_output_limit=col_output_limit))
 
 
 @cli.command()
@@ -177,16 +177,16 @@ def inspect_cactus_request_graph_generation(yaml_file_with_cacus_request_graph_d
     param_space = None
     with open(yaml_file_with_cacus_request_graph_definition, "r") as f:
         param_space = yaml.load(f)
-    print "----------------------"
-    print param_space
-    print "----------------------"
+    print("----------------------")
+    print(param_space)
+    print("----------------------")
     for request_generation_task in param_space[scenariogeneration.REQUEST_GENERATION_TASK]:
-        for name, values in request_generation_task.iteritems():
-            print name, values
+        for name, values in request_generation_task.items():
+            print(name, values)
             if "CactusRequestGenerator" in values:
                 raw_parameters = values["CactusRequestGenerator"]
-                print "\n\nextracted the following parameters..."
-                print name, ": ", raw_parameters
+                print("\n\nextracted the following parameters...")
+                print(name, ": ", raw_parameters)
                 f_inspect_specfic_cactus_request_graph_generation_and_output(name, raw_parameters, iterations)
 
 
@@ -199,7 +199,7 @@ def f_inspect_specfic_cactus_request_graph_generation_and_output(name, raw_param
     # flatten values
     param_key_list = []
     param_value_list = []
-    for key, value in raw_parameters.iteritems():
+    for key, value in raw_parameters.items():
         param_key_list.append(key)
         # only the following parameters really define the graphs generated.
         # hence for these the original lists are preserved, while for the other parameters
@@ -228,7 +228,7 @@ def f_inspect_specfic_cactus_request_graph_generation_and_output(name, raw_param
         for index, value in enumerate(param_combo):
             flattended_raw_parameters[param_key_list[index]] = value
 
-        print flattended_raw_parameters
+        print(flattended_raw_parameters)
         cactus_generator = scenariogeneration.CactusRequestGenerator()
 
         advanced_information = cactus_generator.advanced_empirical_number_of_nodes_edges(flattended_raw_parameters, simple_substrate, iterations)
@@ -278,13 +278,13 @@ def f_inspect_specfic_cactus_request_graph_generation_and_output(name, raw_param
             ys = np.append(ys, 1.0)
             # print node_number, xs, ys
             # print xs, ys
-            print "plot ....", node_number
+            print("plot ....", node_number)
             label = "edge_count_per_node_count_{}".format(node_number)
             if node_number == max_nodes + 1:
                 label = "node_count"
             if node_number == max_nodes + 2:
                 label = "edge_count"
-                print xs[0:10], ys[0:10]
+                print(xs[0:10], ys[0:10])
             if node_number == max_nodes + 3:
                 label = "cycle_count"
             if node_number <= max_nodes:
@@ -292,7 +292,7 @@ def f_inspect_specfic_cactus_request_graph_generation_and_output(name, raw_param
             else:
                 ax.step(xs, ys, label=label, linestyle="-")
 
-        title = "\n".join(["{}: {}".format(key, value) for key, value in flattended_raw_parameters.iteritems()])
+        title = "\n".join(["{}: {}".format(key, value) for key, value in flattended_raw_parameters.items()])
         title += "\n\nExp. |V|: {}; Exp. |E|: {}; Exp. |C|: {}; Exp. CC: {}\n\n".format(
             advanced_information.nodes_generated / float(iterations),
             advanced_information.edges_generated / float(iterations),
@@ -304,11 +304,11 @@ def f_inspect_specfic_cactus_request_graph_generation_and_output(name, raw_param
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
                   fancybox=True, shadow=True, ncol=2)
         plt.title(title)
-        plt.xticks(range(0, max_edge_count + 1))
+        plt.xticks(list(range(0, max_edge_count + 1)))
         plt.tight_layout()
         # plt.show()
         filename = util.ExperimentPathHandler.OUTPUT_DIR + "/{}_{}.pdf".format(name, param_combo_index)
-        print filename
+        print(filename)
         plt.savefig(filename, dpi=300)
 
         # overall_cycle_edges /= float(total_edges)

@@ -1,4 +1,4 @@
-import cPickle as pickle
+import pickle as pickle
 import copy
 import os
 import glob
@@ -8,7 +8,7 @@ import yaml
 
 import numpy
 
-from alib import scenariogeneration, datamodel, test_utils, util
+from alib3 import scenariogeneration, datamodel, test_utils, util
 import pytest
 
 TEST_BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -16,20 +16,20 @@ TEST_BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 _log_directory = None
 @pytest.fixture(scope="session", autouse=True)
 def check_and_create_log_diretory(request):
-    print("\n\nChecking whether directory {} exists...".format(util.ExperimentPathHandler.LOG_DIR))
+    print(("\n\nChecking whether directory {} exists...".format(util.ExperimentPathHandler.LOG_DIR)))
     if not os.path.exists(util.ExperimentPathHandler.LOG_DIR):
-        print("\tdid not exist, will create...".format(util.ExperimentPathHandler.LOG_DIR))
+        print(("\tdid not exist, will create...".format(util.ExperimentPathHandler.LOG_DIR)))
         os.mkdir(util.ExperimentPathHandler.LOG_DIR)
-        print("\tcreated.".format(util.ExperimentPathHandler.LOG_DIR))
+        print(("\tcreated.".format(util.ExperimentPathHandler.LOG_DIR)))
         _log_directory = util.ExperimentPathHandler.LOG_DIR
         #only if it was created, we remove it...
 
         def remove_log_directory():
             if _log_directory is not None:
                 import shutil
-                print("\n\nGoing to remove directory {}..".format(_log_directory))
+                print(("\n\nGoing to remove directory {}..".format(_log_directory)))
                 for logfile in glob.glob(_log_directory + "/*.log"):
-                    print("\tremoving file {}..".format(logfile))
+                    print(("\tremoving file {}..".format(logfile)))
                     os.remove(logfile)
                 print("\tremoving directoy.")
                 os.rmdir(_log_directory)
@@ -91,7 +91,7 @@ class TestChainRequestGenerator:
 
         # walk along the chain by following the out neighbors...
         current_node = scenariogeneration.ServiceChainGenerator.SOURCE_NODE
-        for i in xrange(1 + self.test_parameters_no_random_edges["min_number_of_nodes"]):  # Should take |E| steps to get to the target node, and |E| = |V| + 1
+        for i in range(1 + self.test_parameters_no_random_edges["min_number_of_nodes"]):  # Should take |E| steps to get to the target node, and |E| = |V| + 1
             current_node = req.out_neighbors[current_node][0]  # no random edges => only 1 out neighbor
 
         assert current_node == scenariogeneration.ServiceChainGenerator.TARGET_NODE, "Did not reach target Node! \n{}".format(req.edges)
@@ -282,7 +282,7 @@ class TestScenarioGenerator:
 
     def test_reading_from_yaml_file_produces_correct_scenario_parameters(self):
         with open(os.path.join(TEST_BASE_DIR, "yaml/one_of_each.yml"), "r") as f:
-            param_space = yaml.load(f)
+            param_space = yaml.load(f, Loader=yaml.SafeLoader)
         self.sg.generate_scenarios(param_space)
         assert len(self.sg.scenario_parameter_container.scenario_parameter_combination_list) == 16
         for scenario in self.sg.scenario_parameter_container.scenario_list:
@@ -291,14 +291,14 @@ class TestScenarioGenerator:
 
     def test_scenario_repetition(self):
         with open(os.path.join(TEST_BASE_DIR, "yaml/one_of_each.yml"), "r") as f:
-            param_space = yaml.load(f)
+            param_space = yaml.load(f, Loader=yaml.SafeLoader)
         x = self.sg.generate_scenarios(param_space, repetition=3)
         assert len(self.sg.scenario_parameter_container.scenario_parameter_combination_list) == 48
         assert len(self.sg.scenario_parameter_container.scenario_triple) == 48
 
     def test_scenario_id_offset(self):
         with open(os.path.join(TEST_BASE_DIR, "yaml/tinytiny.yml"), "r") as f:
-            param_space = yaml.load(f)
+            param_space = yaml.load(f, Loader=yaml.SafeLoader)
         scenario_index_offset = 1337
         x = self.sg.generate_scenarios(param_space, repetition=3, scenario_index_offset=scenario_index_offset)
         num_scenarios = len(self.sg.scenario_parameter_container.scenario_parameter_combination_list)
@@ -308,14 +308,14 @@ class TestScenarioGenerator:
 
         scenario_ids_in_reverse_lookup = set()
         spd = self.sg.scenario_parameter_container.scenario_parameter_dict
-        for task, strat_class_key_val_dict in spd.items():
-            for strat, class_key_val_dict in strat_class_key_val_dict.items():
+        for task, strat_class_key_val_dict in list(spd.items()):
+            for strat, class_key_val_dict in list(strat_class_key_val_dict.items()):
                 all_set = set()
-                for class_name, key_val_dict in class_key_val_dict.items():
+                for class_name, key_val_dict in list(class_key_val_dict.items()):
                     if class_name == "all":
                         continue
-                    for key, val_dict in key_val_dict.items():
-                        for val, id_set in val_dict.items():
+                    for key, val_dict in list(key_val_dict.items()):
+                        for val, id_set in list(val_dict.items()):
                             all_set |= id_set
                             scenario_ids_in_reverse_lookup |= id_set
                 assert all_set == spd[task][strat]["all"]
@@ -324,9 +324,9 @@ class TestScenarioGenerator:
 
     def test_merge_scenario_parameter_container(self):
         with open(os.path.join(TEST_BASE_DIR, "yaml/tinytiny.yml"), "r") as f:
-            param_space = yaml.load(f)
+            param_space = yaml.load(f, Loader=yaml.SafeLoader)
         with open(os.path.join(TEST_BASE_DIR, "yaml/one_of_each.yml"), "r") as f:
-            param_space_2 = yaml.load(f)
+            param_space_2 = yaml.load(f, Loader=yaml.SafeLoader)
         self.sg.generate_scenarios(param_space, repetition=3, scenario_index_offset=0)
         spc_base = self.sg.scenario_parameter_container
         offset = len(spc_base.scenario_list)
@@ -356,25 +356,25 @@ class TestScenarioGenerator:
         spd_base = copy.deepcopy(spc_base_pre_merge.scenario_parameter_dict)
         spd_other = copy.deepcopy(spc_other_pre_merge.scenario_parameter_dict)
         spd_merged = spc_base.scenario_parameter_dict
-        for task, strat_class_key_val_dict in spd_merged.items():
+        for task, strat_class_key_val_dict in list(spd_merged.items()):
             assert (task in spd_base) or (task in spd_other)
             base_strat_class_key_val_dict = spd_base.get(task, {})
             other_strat_class_key_val_dict = spd_other.get(task, {})
-            for strat, class_key_val_dict in strat_class_key_val_dict.items():
+            for strat, class_key_val_dict in list(strat_class_key_val_dict.items()):
                 assert (strat in base_strat_class_key_val_dict) or (strat in other_strat_class_key_val_dict)
                 base_class_key_val_dict = base_strat_class_key_val_dict.get(strat, {})
                 other_class_key_val_dict = other_strat_class_key_val_dict.get(strat, {})
                 assert spd_merged[task][strat]["all"] == base_class_key_val_dict.get("all", set()) | other_class_key_val_dict.get("all", set())
-                for class_name, key_val_dict in class_key_val_dict.items():
+                for class_name, key_val_dict in list(class_key_val_dict.items()):
                     if class_name == "all":
                         continue
                     assert (class_name in base_class_key_val_dict) or (class_name in other_class_key_val_dict)
                     base_key_val_dict = base_strat_class_key_val_dict.get(class_name, {})
                     other_key_val_dict = other_strat_class_key_val_dict.get(class_name, {})
-                    for key, val_dict in key_val_dict.items():
+                    for key, val_dict in list(key_val_dict.items()):
                         base_val_dict = base_class_key_val_dict.get(class_name, {}).get(key, {})
                         other_val_dict = other_class_key_val_dict.get(class_name, {}).get(key, {})
-                        for val, id_set in val_dict.items():
+                        for val, id_set in list(val_dict.items()):
                             assert id_set == base_val_dict.get(val, set()) | other_val_dict.get(val, set())
                             base_val_dict.pop(val, None)
                             other_val_dict.pop(val, None)
@@ -397,11 +397,11 @@ class TestScenarioGenerator:
         assert comparable_scenarios(spc_other_pre_merge.scenario_list) == comparable_scenarios(spc_other.scenario_list)
         assert spc_other_pre_merge.scenario_parameter_combination_list == spc_other.scenario_parameter_combination_list
         assert spc_other_pre_merge.scenario_parameter_dict == spc_other.scenario_parameter_dict
-        assert spc_other_pre_merge.scenario_triple.keys() == spc_other.scenario_triple.keys()
+        assert list(spc_other_pre_merge.scenario_triple.keys()) == list(spc_other.scenario_triple.keys())
 
     def test_tiny_yaml_file_produces_correct_scenario_para_container_dict(self):
         with open(os.path.join(TEST_BASE_DIR, "yaml/tinytiny.yml"), "r") as f:
-            param_space = yaml.load(f)
+            param_space = yaml.load(f, Loader=yaml.SafeLoader)
         self.sg.generate_scenarios(param_space)
         scp = self.sg.scenario_parameter_container.scenario_parameter_dict
         assert {0} == scp['node_placement_restriction_mapping']['neighbors']['NeighborhoodSearchRestrictionGenerator']['potential_nodes_factor'][0.3]
@@ -410,7 +410,7 @@ class TestScenarioGenerator:
 
     def test_missing_required_parameters_or_generation_tasks_cause_appropriate_exceptions_and_warnings(self):
         with open(os.path.join(TEST_BASE_DIR, "yaml/tinytiny.yml"), "r") as f:
-            param_space = yaml.load(f)
+            param_space = yaml.load(f, Loader=yaml.SafeLoader)
 
         # Remove a required task:
         del param_space[scenariogeneration.REQUEST_GENERATION_TASK]
@@ -437,14 +437,14 @@ class TestScenarioGenerator:
         assert os.path.exists(out)
         param_dict = pickle.load(open(out, "rb"))
         with open(os.path.join(TEST_BASE_DIR, "yaml/tinytiny.yml"), "r") as f:
-            param_space = yaml.load(f)
+            param_space = yaml.load(f, Loader=yaml.SafeLoader)
         self.sg.generate_scenarios(param_space)
         container = self.sg.scenario_parameter_container
         assert len(param_dict.scenario_list) == len(container.scenario_list)
 
     def test_mp_scenario_generation(self):
         with open(os.path.join(TEST_BASE_DIR, "yaml/tinytiny.yml"), "r") as f:
-            param_space = yaml.load(f)
+            param_space = yaml.load(f, Loader=yaml.SafeLoader)
         mp_start = time.time()
         self.sg.threads = 2
         triple_mp = self.sg.generate_scenarios(param_space)
@@ -457,7 +457,7 @@ class TestScenarioGenerator:
 
         assert len(triple_sp) == len(triple_mp)
 
-        for triple in triple_sp.items():
+        for triple in list(triple_sp.items()):
             (index, (sp, scenario)) = triple
             (sp_sp, scenario_sp) = triple_sp[index]
             assert sp_sp == sp
@@ -488,7 +488,7 @@ class TestRequestGeneration:
             "edge_resource_factor": 1000.0
         }
         self.params = {}
-        self.params[self.cactus] = dict(base.items() + {
+        self.params[self.cactus] = dict(list(base.items()) + list({
             "iterations": 300,  # accurate number of edges estimate is important for this test!
             "max_cycles": 20,
             "layers": 3,
@@ -497,17 +497,17 @@ class TestRequestGeneration:
             "branching_distribution": (0.0, 0.8, 0.1, 0.1),
             "probability": 1.0,
             "arbitrary_edge_orientations": False,
-        }.items())
-        self.params[self.exp] = dict(base.items() + {
+        }.items()))
+        self.params[self.exp] = dict(list(base.items()) + list({
             "probability": 1.0
-        }.items())
-        self.params[self.uniform] = dict(base.items() + {
+        }.items()))
+        self.params[self.uniform] = dict(list(base.items()) + list({
             "probability": 1.0,
             "variability": 0.8
-        }.items())
-        self.params[self.chains] = dict(base.items() + {
+        }.items()))
+        self.params[self.chains] = dict(list(base.items()) + list({
             "probability": 1.0
-        }.items())
+        }.items()))
 
         self.substrate = scenariogeneration.TopologyZooReader().read_substrate({
             "topology": "Geant2012",
@@ -535,7 +535,7 @@ class TestRequestGeneration:
             sp["edge_resource_factor"] = edge_res
             sp["probability"] = prob
             requests = []
-            for _ in xrange(number_of_scenarios):
+            for _ in range(number_of_scenarios):
                 # TODO: why are the edge resources in the unnormalized resource allocation 1-2% greater than expected??
                 requests += req_gen.generate_request_list(sp, self.substrate, normalize=True)
             used_node_resources = {nt: 0.0 for nt in self.substrate.types}
@@ -673,11 +673,11 @@ class TestNodePlacementRestriction:
             exponential=scenariogeneration.ExponentialRequestGenerator()
         )
         scenarios = {}
-        for request_type, req_generator in req_generators.iteritems():
+        for request_type, req_generator in req_generators.items():
             requests = req_generator.generate_request_list(self.parameters, self.substrate)
             scenarios[request_type] = datamodel.Scenario("test_{}".format(request_type), self.substrate, requests)
 
-        for request_type, scenario in scenarios.iteritems():
+        for request_type, scenario in scenarios.items():
             # TODO: Update this when fixed nodes are optional for cactus graph:
             may_have_fixed_nodes = request_type in ["chain", "cactus"]  # chain type must have fixed start/end node to generate latency constraint...
             expected_allowed_node_count_before_restrictions = int(

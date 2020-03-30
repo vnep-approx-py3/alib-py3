@@ -23,7 +23,7 @@
 
 import pkg_resources
 
-import cPickle as pickle
+import pickle as pickle
 import copy
 import networkx as nx
 import itertools
@@ -52,7 +52,7 @@ numpy.random.seed(1234)
 
 UNIVERSAL_NODE_TYPE = "universal"
 
-DATA_PATH = pkg_resources.resource_filename("alib", "data/")
+DATA_PATH = pkg_resources.resource_filename("alib3", "data/")
 
 
 class RequestGenerationError(Exception): pass
@@ -106,9 +106,9 @@ def verify_completeness_of_scenario_parameters(scenario_parameter_space):
             errors.append("Scenario parameters require task {}, but do not provide a strategy for it!".format(task))
             continue
         for strategy_dict in scenario_parameter_space[task]:
-            strategy = strategy_dict.keys()[0]
+            strategy = list(strategy_dict.keys())[0]
             class_param_dict = strategy_dict[strategy]
-            strategy_class_name = class_param_dict.keys()[0]
+            strategy_class_name = list(class_param_dict.keys())[0]
             if strategy_class_name not in globals():
                 errors.append("Could not resolve class {}, employed in strategy {} for task {}.".format(
                     strategy_class_name, strategy, task
@@ -123,7 +123,7 @@ def verify_completeness_of_scenario_parameters(scenario_parameter_space):
                 ))
                 continue
             expected = set(strategy_class.EXPECTED_PARAMETERS)
-            parameters = set(class_param_dict.values()[0].keys())
+            parameters = set(list(class_param_dict.values())[0].keys())
             if expected - parameters:
                 msg = "The following parameters for {task}, {strategy} were not defined but are required by {strategy_class}:\n        {missing}".format(
                     task=task,
@@ -155,7 +155,7 @@ def generate_pickle_from_yml(parameter_file, scenario_out_pickle, threads=1, sce
     :param scenario_index_offset: offset of scenario indicices to enable merging of distinct scenario storages
     :return: None
     '''
-    param_space = yaml.load(parameter_file)
+    param_space = yaml.load(parameter_file, Loader=yaml.SafeLoader)
     sg = ScenarioGenerator(threads)
     repetition = 1
     if 'scenario_repetition' in param_space:
@@ -194,13 +194,13 @@ class ScenarioParameterContainer(object):
         """
         product_dict = {}
         # Expand the inner-most parameters  (dict of lists -> list of dicts)
-        for scenario_generation_task, scenario_task_strategy_list in self.scenarioparameter_room.iteritems():
+        for scenario_generation_task, scenario_task_strategy_list in self.scenarioparameter_room.items():
             product_dict[scenario_generation_task] = {}
             for scenario_task_strategy in scenario_task_strategy_list:
                 # TODO: make this more clear, and add some sanity checks ensuring that scenario_task_strategy contains exactly 1 strategy
-                strategy_name = scenario_task_strategy.keys()[0]
-                strategy_class = scenario_task_strategy.values()[0].keys()[0]
-                strategy_parameter_space = scenario_task_strategy.values()[0].values()[0]
+                strategy_name = list(scenario_task_strategy.keys())[0]
+                strategy_class = next(iter(list(scenario_task_strategy.values())[0].keys()))
+                strategy_parameter_space = next(iter(list(scenario_task_strategy.values())[0].values()))
                 self.make_values_immutable(strategy_parameter_space)
                 inner_parameter_combinations = ScenarioParameterContainer._expand_innermost_parameter_space(strategy_parameter_space)
                 expanded_solution_parameters = {strategy_class: inner_parameter_combinations}
@@ -211,7 +211,7 @@ class ScenarioParameterContainer(object):
         result = []
         # tuple of lists of the user-defined strategy names for each task, e.g.:
         # ([t1_s1, t1_s2], [t2_s1], [t3_s1, t3_s2, t3_s3])
-        tuple_of_solutions_for_each_task = tuple(product_dict[t].keys() for t in tasks)
+        tuple_of_solutions_for_each_task = tuple(list(product_dict[t].keys()) for t in tasks)
 
         # list of tuples of strategy names, containing exactly one strategy for each task, e.g.:
         # [(t1_s1, t2_s1, t3_s1), (t1_s2, t2_s1, t3_s1),
@@ -224,10 +224,10 @@ class ScenarioParameterContainer(object):
             # name of the class where the strategy is implemented, e.g.:
             # strategy_combination = ("service_chains", "optimal_profit_calc", ...)
             # => class_list = ["ServiceChainGenerator", "OptimalEmbeddingProfitCalculator", ...]
-            class_list = [product_dict[tasks[i]][sol].keys()[0] for (i, sol) in enumerate(strategy_combination)]
+            class_list = [list(product_dict[tasks[i]][sol].keys())[0] for (i, sol) in enumerate(strategy_combination)]
 
             # tuple_task_parameter_list contains the parameter space for each
-            tuple_task_parameter_list = tuple(product_dict[tasks[i]][sol].values()[0] for (i, sol) in enumerate(strategy_combination))
+            tuple_task_parameter_list = tuple(list(product_dict[tasks[i]][sol].values())[0] for (i, sol) in enumerate(strategy_combination))
 
             # expand the parameter spaces of all strategies to parameter dictionaries:
             for combination in itertools.product(*tuple_task_parameter_list):
@@ -258,7 +258,7 @@ class ScenarioParameterContainer(object):
                                 for parameter in all_parameters))
         ]
         return [dict(combination) for combination in
-                [zip(all_parameters, product) for product in parameter_combinations]]
+                [list(zip(all_parameters, product)) for product in parameter_combinations]]
 
     def make_values_immutable(self, raw_parameter):
         """
@@ -269,7 +269,7 @@ class ScenarioParameterContainer(object):
         :param raw_parameter:
         :return:
         """
-        for key, value_list in raw_parameter.iteritems():
+        for key, value_list in raw_parameter.items():
             if isinstance(value_list[0], list):
                 raw_parameter[key] = [tuple(x) for x in value_list]
 
@@ -281,7 +281,7 @@ class ScenarioParameterContainer(object):
         self.scenario_parameter_dict = {}
         self.scenario_triple = {}
         """
-        overlap = set(self.scenario_triple.keys()).intersection(other.scenario_triple.keys())
+        overlap = set(self.scenario_triple.keys()).intersection(list(other.scenario_triple.keys()))
         if overlap:
             msg = "Cannot merge scenario parameter containers due to overlapping scenario IDs {}".format(
                 overlap
@@ -291,7 +291,7 @@ class ScenarioParameterContainer(object):
         self.scenario_parameter_combination_list += other.scenario_parameter_combination_list
         self.scenario_triple.update(other.scenario_triple)
 
-        for i, (sp, scenario) in other.scenario_triple.items():
+        for i, (sp, scenario) in list(other.scenario_triple.items()):
             self.fill_reverselookup_dict(sp, i)
 
         if not isinstance(self.scenarioparameter_room, list):
@@ -309,16 +309,16 @@ class ScenarioParameterContainer(object):
         for task in SCENARIO_GENERATION_TASKS:
             if task not in sp:
                 continue
-            strat_id = sp[task].keys()[0]
+            strat_id = list(sp[task].keys())[0]
             spd[task].setdefault(strat_id, dict())
             spd[task][strat_id].setdefault('all', set())
             spd[task][strat_id]['all'].add(currentindex)
             # spd[task][sp[task].keys()[0]] = sp[task][sp[task].keys()[0]]
             for strat in sp[task]:
-                spd[task][strat].setdefault(sp[task][strat].keys()[0], dict())
+                spd[task][strat].setdefault(list(sp[task][strat].keys())[0], dict())
                 for class_name in sp[task][strat]:
                     spd[task][strat].setdefault(class_name, dict())
-                    for key, val in sp[task][strat][class_name].iteritems():
+                    for key, val in sp[task][strat][class_name].items():
                         spd[task][strat][class_name].setdefault(key, dict())
                         spd[task][strat][class_name][key].setdefault(val, set())
                         spd[task][strat][class_name][key][val].add(currentindex)
@@ -350,7 +350,7 @@ class ScenarioGenerator(object):
         if "data_managers" in scenario_parameter_space:
             self.main_data_manager = CustomizedDataManager()
             self.main_data_manager.start()
-            for key, value in scenario_parameter_space["data_managers"].iteritems():
+            for key, value in scenario_parameter_space["data_managers"].items():
                 if key == "UndirectedGraphStorage":
                     global_logger.info("Starting UndirectedGraphStorage Manager")
                     graph_storage_manager = self.main_data_manager.UndirectedGraphStorage(parameter_name=None)
@@ -432,18 +432,18 @@ def build_scenario(i_sp_tup):
                                       objective=datamodel.Objective.MIN_COST)
         top_zoo_reader = TopologyZooReader(logger=logger)
         top_zoo_reader.apply(sp, scenario)
-        class_name_request_generator = sp[REQUEST_GENERATION_TASK].values()[0].keys()[0]
+        class_name_request_generator = next(iter(list(sp[REQUEST_GENERATION_TASK].values())[0].keys()))
         global_name_space = globals()
         rg = global_name_space[class_name_request_generator](logger=logger)
         if datamanager_dict is not None:
             rg.register_data_manager_dict(datamanager_dict)
         rg.apply(sp, scenario)
         if NODE_PLACEMENT_TASK in sp:
-            class_name_npr = sp[NODE_PLACEMENT_TASK].values()[0].keys()[0]
+            class_name_npr = next(iter(list(sp[NODE_PLACEMENT_TASK].values())[0].keys()))
             npr = global_name_space[class_name_npr](logger=logger)
             npr.apply(sp, scenario)
         if PROFIT_CALCULATION_TASK in sp:
-            class_name_profit_calc = sp[PROFIT_CALCULATION_TASK].values()[0].keys()[0]
+            class_name_profit_calc = next(iter(list(sp[PROFIT_CALCULATION_TASK].values())[0].keys()))
             pc = global_name_space[class_name_profit_calc](logger=logger)
             pc.apply(sp, scenario)
             scenario.objective = datamodel.Objective.MAX_PROFIT
@@ -495,7 +495,7 @@ class AbstractRequestGenerator(ScenariogenerationTask):
         self._data_manager_dict = data_manager_dict
 
     def apply(self, scenario_parameters, scenario):
-        class_raw_parameters_dict = scenario_parameters[REQUEST_GENERATION_TASK].values()[0]
+        class_raw_parameters_dict = list(scenario_parameters[REQUEST_GENERATION_TASK].values())[0]
         class_name = self.__class__.__name__
         if class_name not in class_raw_parameters_dict:
             raise RequestGenerationError("")
@@ -516,7 +516,7 @@ class AbstractRequestGenerator(ScenariogenerationTask):
                 raw_parameters["number_of_requests"]
             )
         )
-        for i in xrange(raw_parameters["number_of_requests"]):
+        for i in range(raw_parameters["number_of_requests"]):
             name = base_name.format(id=i + 1)
             req = self.generate_request(name, raw_parameters, substrate)
             # log.debug("Generated {} with {} nodes and {} edges".format(req.name, len(req.nodes), len(req.edges)))
@@ -773,7 +773,7 @@ class ExponentialRequestGenerator(AbstractRequestGenerator):
 
         # create nodes
         number_of_nodes = random.randint(min_number_nodes, max_number_nodes)
-        for i in xrange(1, number_of_nodes + 1):
+        for i in range(1, number_of_nodes + 1):
             node_type = self._next_node_type()
             node_demand = selected_edge_resources / average_request_edge_resources * average_request_node_resources[node_type]
             req.add_node(str(i), node_demand, node_type, allowed_nodes=self._substrate.get_nodes_by_type(node_type))
@@ -872,7 +872,7 @@ class UniformRequestGenerator(AbstractRequestGenerator):
 
         selected_number_of_nodes = random.randint(min_number_nodes, max_number_nodes)
 
-        for node in xrange(1, selected_number_of_nodes + 1):
+        for node in range(1, selected_number_of_nodes + 1):
             node_type = self._next_node_type()
             node_demand = random.uniform(min_request_node_demand_per_type[node_type], max_request_node_demand_per_type[node_type])
             req.add_node(str(node), node_demand, node_type, allowed_nodes=self._substrate.get_nodes_by_type(node_type))
@@ -1017,7 +1017,7 @@ class CactusRequestGenerator(AbstractRequestGenerator):
         previous_layer = [root_id]
         if self._raw_parameters["fix_root_mapping"]:
             fixed_nodes.append(root_id)
-        for layer in xrange(1, self._raw_parameters["layers"] + 1):
+        for layer in range(1, self._raw_parameters["layers"] + 1):
             current_layer = []
             while previous_layer:
                 parent_node = previous_layer.pop()
@@ -1026,7 +1026,7 @@ class CactusRequestGenerator(AbstractRequestGenerator):
                     number_of_children = self._pick_number_of_children()
                 if number_of_children == 0 and self._raw_parameters["fix_leaf_mapping"]:
                     fixed_nodes.append(parent_node)
-                for i in xrange(1, number_of_children + 1):
+                for i in range(1, number_of_children + 1):
                     ntype = self._next_node_type()
                     child_node = self._get_node_name(len(req.nodes) + 1, parent_node, layer, ntype, req)
                     current_layer.append(child_node)
@@ -1197,7 +1197,7 @@ class CactusRequestGenerator(AbstractRequestGenerator):
         self._edge_demand = 0.0
         r_state = random.getstate()
         iterations = self._raw_parameters["iterations"]
-        for i in xrange(iterations):
+        for i in range(iterations):
             req = self._generate_tree_with_correct_size("test")
             self._add_cactus_edges(req)
             total_nodes += len(req.nodes)
@@ -1224,10 +1224,10 @@ class CactusRequestGenerator(AbstractRequestGenerator):
 
         raw_parameters["iterations"] = 1
 
-        for i in xrange(iterations):
+        for i in range(iterations):
 
             if i % 100000 == 0 and i > 0:
-                print("{} of {} iterations done.".format(i, iterations))
+                print(("{} of {} iterations done.".format(i, iterations)))
 
             req = self.generate_request(name="test",
                                         raw_parameters=raw_parameters,
@@ -1237,7 +1237,7 @@ class CactusRequestGenerator(AbstractRequestGenerator):
             number_edges = len(req.edges)
             cycles = number_edges - number_nodes + 1
             if cycles == 0:
-                print "NO CYCLES!"
+                print("NO CYCLES!")
             self._advanced_inspection_information.generated_cycles.append(cycles)
 
             self._advanced_inspection_information.node_edge_comination.append((number_nodes, number_edges))
@@ -1305,7 +1305,7 @@ class TreewidthRequestGenerator(AbstractRequestGenerator):
             self._undirected_graph_storage_lock = graph_storage_lock
             if self._average_edge_numbers_of_treewidth is None:
                 self._average_edge_numbers_of_treewidth = {}
-            if self._treewidth not in self._average_edge_numbers_of_treewidth.keys():
+            if self._treewidth not in list(self._average_edge_numbers_of_treewidth.keys()):
                 with self._undirected_graph_storage_lock:
                     self._average_edge_numbers_of_treewidth[
                         self._treewidth] = self._undirected_graph_storage.get_average_number_of_edges_for_parameter(
@@ -1333,7 +1333,7 @@ class TreewidthRequestGenerator(AbstractRequestGenerator):
         else:
             if self._average_edge_numbers_of_treewidth is None:
                 self._average_edge_numbers_of_treewidth = {}
-            if self._treewidth not in self._average_edge_numbers_of_treewidth.keys():
+            if self._treewidth not in list(self._average_edge_numbers_of_treewidth.keys()):
                 with self._undirected_graph_storage_lock:
                     self._average_edge_numbers_of_treewidth[self._treewidth] = self._undirected_graph_storage.get_average_number_of_edges_for_parameter(self._treewidth)
             self._expected_number_of_request_edges = 0
@@ -1369,7 +1369,7 @@ class TreewidthRequestGenerator(AbstractRequestGenerator):
         while True:
             # round as long as there exists a graph with this number of nodes
             self._number_of_nodes = random.randint(self._min_number_nodes, self._max_number_nodes)
-            if self._treewidth == 1 or self._number_of_nodes in self._average_edge_numbers_of_treewidth[self._treewidth].keys():
+            if self._treewidth == 1 or self._number_of_nodes in list(self._average_edge_numbers_of_treewidth[self._treewidth].keys()):
                 break
             else:
                 self.logger.warning("The undirected graph storage does not contain graphs for treewidth {} having exactly {} nodes.".format(self._treewidth, self._number_of_nodes))
@@ -1396,7 +1396,7 @@ class TreewidthRequestGenerator(AbstractRequestGenerator):
         connected_component_id_to_nodes = {i: [str(i)] for i in range(1, number_of_nodes + 1)}
         result = []
         current_edge_index = 0
-        while len(connected_component_id_to_nodes.keys()) > 1:
+        while len(list(connected_component_id_to_nodes.keys())) > 1:
             # check if adding edge would violate tree property
             i, j = all_edges[current_edge_index]
             component_i = node_to_connected_component_id[i]
@@ -1479,10 +1479,10 @@ class AbstractProfitCalculator(ScenariogenerationTask):
         super(AbstractProfitCalculator, self).__init__(logger)
 
     def apply(self, scenario_parameters, scenario):
-        class_raw_parameters_dict = scenario_parameters[PROFIT_CALCULATION_TASK].values()[0]
+        class_raw_parameters_dict = list(scenario_parameters[PROFIT_CALCULATION_TASK].values())[0]
         class_name = self.__class__.__name__
         if class_name not in class_raw_parameters_dict:
-            valid_class_str = ", ".join(str(c) for c in class_raw_parameters_dict.keys())
+            valid_class_str = ", ".join(str(c) for c in list(class_raw_parameters_dict.keys()))
             raise ScenarioGeneratorError("{class_name} is not a valid profit calculation tasks (expected one of {valid_classes})".format(
                 class_name=class_name, valid_classes=valid_class_str
             ))
@@ -1522,12 +1522,12 @@ class RandomEmbeddingProfitCalculator(AbstractProfitCalculator):
             self._scenario.substrate.initialize_shortest_paths_costs()
 
         for req in self._scenario.requests:
-            start_time = time.clock()
+            start_time = time.perf_counter()
             cost = self._get_average_cost_from_embedding_graph_randomly(
                 req, self._scenario.substrate.shortest_paths_costs
             )
             req.profit = -cost * raw_parameters["profit_factor"]
-            end_time = time.clock()
+            end_time = time.perf_counter()
             req.graph["profit_calculation_time"] = end_time - start_time
             self.logger.debug("\t{}\t{}".format(req.name, req.profit))
 
@@ -1535,9 +1535,9 @@ class RandomEmbeddingProfitCalculator(AbstractProfitCalculator):
         self._scenario = None
 
     def _get_average_cost_from_embedding_graph_randomly(self, req, shortest_paths):
-        costs = [0 for _ in xrange(self._iterations)]
+        costs = [0 for _ in range(self._iterations)]
         average_factor = 1.0 / self._iterations
-        for i in xrange(self._iterations):
+        for i in range(self._iterations):
             mapped_node = dict()
             costs[i] = 0.0
             for node in req.get_nodes():
@@ -1585,7 +1585,7 @@ class OptimalEmbeddingProfitCalculator(AbstractProfitCalculator):
 
     def _apply_embedding_cost_as_request_profit(self, embedding_cost, scenario_parameters):
         self.logger.info("Applying vnet profits to scenario {}".format(self._scenario))
-        for req, cost in itertools.izip(self._scenario.requests, embedding_cost):
+        for req, cost in zip(self._scenario.requests, embedding_cost):
             req.profit = cost * scenario_parameters["profit_factor"]
             self.logger.debug("\t{}\t{}".format(req.name, req.profit))
 
@@ -1636,7 +1636,7 @@ class AbstractNodeMappingRestrictionGenerator(ScenariogenerationTask):
         super(AbstractNodeMappingRestrictionGenerator, self).__init__(logger)
 
     def apply(self, scenario_parameters, scenario):
-        class_raw_parameters_dict = scenario_parameters[NODE_PLACEMENT_TASK].values()[0]
+        class_raw_parameters_dict = list(scenario_parameters[NODE_PLACEMENT_TASK].values())[0]
         class_name = self.__class__.__name__
         if class_name not in class_raw_parameters_dict:
             raise ScenarioGeneratorError("")
@@ -1755,7 +1755,7 @@ class TopologyZooReader(ScenariogenerationTask):
         self._raw_nx_graphs = {}
 
     def apply(self, scenario_parameters, scenario):
-        class_raw_parameters_dict = scenario_parameters[SUBSTRATE_GENERATION_TASK].values()[0]
+        class_raw_parameters_dict = list(scenario_parameters[SUBSTRATE_GENERATION_TASK].values())[0]
         class_name = self.__class__.__name__
         if class_name not in class_raw_parameters_dict:
             raise ScenarioGeneratorError("")
@@ -1773,7 +1773,7 @@ class TopologyZooReader(ScenariogenerationTask):
         with open(os.path.abspath(os.path.join(self.topology_zoo_dir, topology + ".yml"))) as f:
             graph_dict = yaml.safe_load(f)
 
-        nodes = graph_dict["nodes"].keys()
+        nodes = list(graph_dict["nodes"].keys())
         edges = graph_dict["edges"]
         assigned_types = self._assign_node_types(nodes, raw_parameters)
 
@@ -1797,7 +1797,7 @@ class TopologyZooReader(ScenariogenerationTask):
             for type in assigned_types[node]:
                 total_capacity_per_type[type] += raw_parameters["node_capacity"]
 
-        sum_of_capacities = sum(total_capacity_per_type[type] for type in total_capacity_per_type.keys())
+        sum_of_capacities = sum(total_capacity_per_type[type] for type in list(total_capacity_per_type.keys()))
 
         substrate = datamodel.Substrate(topology)
 
@@ -1812,7 +1812,7 @@ class TopologyZooReader(ScenariogenerationTask):
 
         average_distance = 0
 
-        for (tail, head), dist in dists.items():
+        for (tail, head), dist in list(dists.items()):
             cost = dist
             capacity = raw_parameters["edge_capacity"]
             if raw_parameters.get("include_latencies", False):
@@ -1851,7 +1851,7 @@ def haversine(lon1, lat1, lon2, lat2):
     on the earth (specified in decimal degrees)
     """
     # convert decimal degrees to radians
-    lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
+    lon1, lat1, lon2, lat2 = list(map(math.radians, [lon1, lat1, lon2, lat2]))
 
     # haversine formula
     dlon = lon2 - lon1
@@ -1874,17 +1874,17 @@ def convert_topology_zoo_gml_to_yml(gml_path, yml_path, consider_disconnected):
 
 
         try:
-            print "reading file {}".format(net_file)
+            print("reading file {}".format(net_file))
             try:
                 graph = nx.read_gml(net_file, label="id")
             except Exception as ex:
                 if "duplicated" in str(ex) and "multigraph 1" in str(ex):
-                    print "Multigraph detected; fixing the problem"
+                    print("Multigraph detected; fixing the problem")
                     with open(net_file, "r") as f:
                         graph_source = f.read()
                     graph_source = graph_source.replace("graph [", "graph [\n  multigraph 1")
                     graph = nx.parse_gml(graph_source, label="id")
-                    print "tried to fix it.."
+                    print("tried to fix it..")
 
 
 
@@ -1892,9 +1892,9 @@ def convert_topology_zoo_gml_to_yml(gml_path, yml_path, consider_disconnected):
 
             if len(largest_cc) < graph.number_of_nodes():
                 if consider_disconnected:
-                    print "Graph is not connected, considering only the largest connected component with {} nodes".format(len(largest_cc))
+                    print("Graph is not connected, considering only the largest connected component with {} nodes".format(len(largest_cc)))
                 else:
-                    print "Graph is not connected, discarding it!"
+                    print("Graph is not connected, discarding it!")
                     continue
 
 
@@ -1903,7 +1903,7 @@ def convert_topology_zoo_gml_to_yml(gml_path, yml_path, consider_disconnected):
             yml_contents = {"nodes": {}, "edges": []}
             for node in nodes:
                 data = graph.node[node]
-                print node, data
+                print(node, data)
                 longitude = 0
                 latitude = 0
                 if "Longitude" in data:
@@ -1913,9 +1913,9 @@ def convert_topology_zoo_gml_to_yml(gml_path, yml_path, consider_disconnected):
                         if "Longitude" in graph.node[neighbor]:
                             longitude += graph.node[neighbor]["Longitude"]
                         else:
-                            print "Could NOT estimate longitude for node {} based on neighbors. Aborting conversion.".format(node)
+                            print("Could NOT estimate longitude for node {} based on neighbors. Aborting conversion.".format(node))
                             raise RuntimeError("Could not approximate longitude")
-                    print "Successfully estimated longitude for node {} based on neighbors".format(node)
+                    print("Successfully estimated longitude for node {} based on neighbors".format(node))
                     longitude /= float(len(list(graph.neighbors(node))))
 
 
@@ -1926,13 +1926,13 @@ def convert_topology_zoo_gml_to_yml(gml_path, yml_path, consider_disconnected):
                         if "Latitude" in graph.node[neighbor]:
                             latitude += graph.node[neighbor]["Latitude"]
                         else:
-                            print "Could NOT estimate latitude for node {} based on neighbors. Aborting conversion.".format(node)
+                            print("Could NOT estimate latitude for node {} based on neighbors. Aborting conversion.".format(node))
                             raise RuntimeError("Could not approximate latitude")
-                    print "Successfully estimated latitude for node {} based on neighbors".format(node)
+                    print("Successfully estimated latitude for node {} based on neighbors".format(node))
                     latitude /= float(len(list(graph.neighbors(node))))
 
                 yml_contents["nodes"][str(node)] = {'Longitude': longitude, "Latitude": latitude}
-                for data_key, data_value in data.iteritems():
+                for data_key, data_value in data.items():
                     if data_key == "Longitude" or data_key == "Latitude":
                         continue
                     else:
@@ -1941,29 +1941,29 @@ def convert_topology_zoo_gml_to_yml(gml_path, yml_path, consider_disconnected):
 
             for u,v, data in graph.edges(data=True):
                 if u not in nodes:
-                    print("Node {} not contained in graph; edge {} not considered. This should be due to the graph not being connected.".format(u, (u,v)))
+                    print(("Node {} not contained in graph; edge {} not considered. This should be due to the graph not being connected.".format(u, (u,v))))
                     continue
                 if v not in nodes:
-                    print(
+                    print((
                         "Node {} not contained in graph; edge {} not considered. This should be due to the graph not being connected.".format(
-                            v, (u, v)))
+                            v, (u, v))))
                     continue
                 if (str(u), str(v)) in yml_contents["edges"]:
-                    print "Edge {} already known (MultiGraph), discarding it".format((str(u), str(v)))
+                    print("Edge {} already known (MultiGraph), discarding it".format((str(u), str(v))))
                     continue
                 else:
                     yml_contents["edges"].append([str(u),str(v)])
 
             output_filename = os.path.join(yml_path, network_name + ".yml")
-            print "writing {}".format(output_filename)
+            print("writing {}".format(output_filename))
             with open(output_filename, "w") as output:
                 yaml.dump(yml_contents, output)
-            print "file {} sucessfully converted to yml file {}! \n\n\n".format(net_file, output_filename)
+            print("file {} sucessfully converted to yml file {}! \n\n\n".format(net_file, output_filename))
 
         except Exception as ex:
             import traceback
-            print "conversion of file {} to yml was NOT sucessful! \n\n\n".format(net_file)
-            print "non successfull! {}\n\n\n".format(str(ex))
+            print("conversion of file {} to yml was NOT sucessful! \n\n\n".format(net_file))
+            print("non successfull! {}\n\n\n".format(str(ex)))
             traceback.print_exc()
 
 
@@ -1978,7 +1978,7 @@ def summarize_topology_zoo_graphs(min_number_nodes=10, max_number_nodes=100):
 
     reader = TopologyZooReader()
 
-    print "network_files", network_files
+    print("network_files", network_files)
 
     raw_parameters = {"topology": "UNDEFINED",
                       "node_types": ["universal"],
@@ -1993,11 +1993,11 @@ def summarize_topology_zoo_graphs(min_number_nodes=10, max_number_nodes=100):
 
         raw_parameters["topology"] = network_name
 
-        print "trying to parse {} ".format(network_name)
+        print("trying to parse {} ".format(network_name))
         graph = reader.read_from_yaml(raw_parameters)
 
         if not graph.check_connectivity():
-            print("graph {} is NOT connected!".format(network_name))
+            print(("graph {} is NOT connected!".format(network_name)))
             continue
 
         networks_by_name[network_name] = graph
@@ -2013,7 +2013,7 @@ def summarize_topology_zoo_graphs(min_number_nodes=10, max_number_nodes=100):
             multiple_occuring_networks[nameWithoutDate].append((network_name, dateInformation))
 
     # select only the most current graphs
-    for mNetwork in multiple_occuring_networks.keys():
+    for mNetwork in list(multiple_occuring_networks.keys()):
         listOfNetworks = multiple_occuring_networks[mNetwork]
         bestName = None
         bestDate = None
@@ -2026,20 +2026,20 @@ def summarize_topology_zoo_graphs(min_number_nodes=10, max_number_nodes=100):
 
         for network_name, dateInformation in listOfNetworks:
             if network_name != bestName:
-                print("deleting {} as it is superseded by {}".format(network_name, bestName))
+                print(("deleting {} as it is superseded by {}".format(network_name, bestName)))
                 del networks_by_name[network_name]
 
-    print networks_by_name
-    print multiple_occuring_networks
+    print(networks_by_name)
+    print(multiple_occuring_networks)
 
     # order networks according to increasing complexity
     orderedDictOfNetworks = {}
-    for network, graph in networks_by_name.items():
+    for network, graph in list(networks_by_name.items()):
         n = graph.get_number_of_nodes()
         if n < min_number_nodes or n > max_number_nodes:
-            print "not considering graph ", network
+            print("not considering graph ", network)
             continue
-        if n not in orderedDictOfNetworks.keys():
+        if n not in list(orderedDictOfNetworks.keys()):
             orderedDictOfNetworks[n] = []
         orderedDictOfNetworks[n].append((network, graph))
 
@@ -2048,11 +2048,11 @@ def summarize_topology_zoo_graphs(min_number_nodes=10, max_number_nodes=100):
 
     numberOfgraphs = 0
     for numberOfNodes in sorted(orderedDictOfNetworks.keys()):
-        print("n = {}: {}\n\t{}".format(numberOfNodes, len(orderedDictOfNetworks[numberOfNodes]),[(x,y.get_number_of_edges()) for (x,y) in orderedDictOfNetworks[numberOfNodes]]))
+        print(("n = {}: {}\n\t{}".format(numberOfNodes, len(orderedDictOfNetworks[numberOfNodes]),[(x,y.get_number_of_edges()) for (x,y) in orderedDictOfNetworks[numberOfNodes]])))
         numberOfgraphs += len(orderedDictOfNetworks[numberOfNodes])
 
-    print("\n" + "-" * 40)
-    print("Selected {} graphs.".format(numberOfgraphs))
+    print(("\n" + "-" * 40))
+    print(("Selected {} graphs.".format(numberOfgraphs)))
 
     print("\nsaving list of selected topologies..\n")
 

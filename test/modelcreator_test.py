@@ -1,6 +1,6 @@
 import pytest
 
-from alib.modelcreator import construct_name, build_construct_name
+from alib3.modelcreator import construct_name, build_construct_name
 
 
 def test_construct_name():

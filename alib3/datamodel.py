@@ -25,8 +25,13 @@ from collections import defaultdict
 import random
 import numpy as np
 
+
+from . import util
+
+global_logger = util.get_logger(__name__, make_file=False, propagate=True)
+
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -69,7 +74,7 @@ class Scenario(object):
             required_types = req.get_required_types()
             available_types = self.substrate.get_types()
             if not (required_types <= available_types):
-                print required_types - available_types, ' missing'
+                print(required_types - available_types, ' missing')
                 return False
         return True
 
@@ -142,7 +147,7 @@ class UndirectedGraph(object):
         return self.neighbors[node]
 
     def get_edge_representation(self):
-        return [list(edge) for edge in self.edges]
+        return [list(edge) for edge in self.edges]  #tuples are converted to lists
 
     def check_connectedness(self):
         if len(self.nodes) == 0:
@@ -195,7 +200,7 @@ def is_connected_undirected_edge_representation(edge_list):
 
     for i,j in edge_list:
 
-        if i in node_to_connected_component_id.keys() and j in node_to_connected_component_id.keys():
+        if i in list(node_to_connected_component_id.keys()) and j in list(node_to_connected_component_id.keys()):
             #both nodes are already known
             connected_component_i = node_to_connected_component_id[i]
             connected_component_j = node_to_connected_component_id[j]
@@ -209,13 +214,13 @@ def is_connected_undirected_edge_representation(edge_list):
                 connected_component_id_to_nodes[connected_component_i].extend(connected_component_id_to_nodes[connected_component_j])
                 del connected_component_id_to_nodes[connected_component_j]
 
-        elif i in node_to_connected_component_id.keys() and j not in node_to_connected_component_id.keys():
+        elif i in list(node_to_connected_component_id.keys()) and j not in list(node_to_connected_component_id.keys()):
             #add j to connected component of i
             connected_component_i = node_to_connected_component_id[i]
             node_to_connected_component_id[j] = connected_component_i
             connected_component_id_to_nodes[connected_component_i].append(j)
 
-        elif i not in node_to_connected_component_id.keys() and j in node_to_connected_component_id.keys():
+        elif i not in list(node_to_connected_component_id.keys()) and j in list(node_to_connected_component_id.keys()):
             # add i to connected component of j
             connected_component_j = node_to_connected_component_id[j]
             node_to_connected_component_id[i] = connected_component_j
@@ -228,7 +233,7 @@ def is_connected_undirected_edge_representation(edge_list):
             node_to_connected_component_id[j] = new_connected_component_id
             connected_component_id_to_nodes[new_connected_component_id].extend([i,j])
 
-    if len(connected_component_id_to_nodes.keys()) == 1:
+    if len(list(connected_component_id_to_nodes.keys())) == 1:
         return True
     else:
         return False
@@ -308,11 +313,11 @@ class UndirectedGraphStorage(object):
                                                                                                                     percentiles[5])
 
     def get_average_number_of_edges_for_parameter(self, parameter_value):
-        if parameter_value in self._average_number_of_edges_dict.keys():
+        if parameter_value in list(self._average_number_of_edges_dict.keys()):
             return self._average_number_of_edges_dict[parameter_value]
         else:
             self._average_number_of_edges_dict[parameter_value] = {}
-            for foolaa in self.undirected_edge_representation_storage[parameter_value].keys():
+            for foolaa in list(self.undirected_edge_representation_storage[parameter_value].keys()):
                 number_of_graphs = len(self.undirected_edge_representation_storage[parameter_value][foolaa])
                 edge_counts = np.zeros(number_of_graphs)
                 for i in range(number_of_graphs):
@@ -324,10 +329,10 @@ class UndirectedGraphStorage(object):
 
     def get_information(self):
         result = ""
-        for parameter_value in self.undirected_edge_representation_storage.keys():
+        for parameter_value in list(self.undirected_edge_representation_storage.keys()):
             total = 0
             result += "========================\nPARAMETER {} = {}\n========================\n".format(self.parameter_name, parameter_value)
-            for number_of_nodes in self.undirected_edge_representation_storage[parameter_value].keys():
+            for number_of_nodes in list(self.undirected_edge_representation_storage[parameter_value].keys()):
                 number_of_graphs = len(self.undirected_edge_representation_storage[parameter_value][number_of_nodes])
                 edge_info = self._get_edge_distribution_information(parameter_value, number_of_nodes)
                 result += "\tnodes: {:>3} --> {:>5} graphs with edge distribution {}\n".format(number_of_nodes, number_of_graphs, edge_info)
@@ -364,7 +369,7 @@ class Graph(object):
         self.out_edges[node] = []
         self.in_edges[node] = []
         self.node[node] = {}
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             self.node[node][key] = value
         #print "added node: {}, now there are {} nodes".format(node, len(self.nodes))
 
@@ -390,7 +395,7 @@ class Graph(object):
 
         self.edges.add(new_edge)
         self.edge[new_edge] = {}
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             self.edge[new_edge][key] = value
 
     def get_nodes(self):
@@ -464,10 +469,8 @@ class Graph(object):
         for u in self.nodes:
             for v in self.nodes:
                 if self.shortest_paths_costs[u][v] is None:
-                    print "node {} cannot reach node {}".format(u, v)
+                    print("node {} cannot reach node {}".format(u, v))
                     return False
-
-
         return True
 
     def __str__(self):
@@ -476,14 +479,14 @@ class Graph(object):
 
     def print_shortest_path(self, including_shortest_path_costs=True, data=False):
         if data:
-            print self.__str__()
+            print(self.__str__())
         if including_shortest_path_costs:
             if self.shortest_paths_costs is None:
                 self.initialize_shortest_paths_costs()
-            print "Distances:"
+            print("Distances:")
             for u in self.nodes:
                 for v in self.nodes:
-                    print "{} to {}: {}".format(u, v, self.shortest_paths_costs[u][v])
+                    print("{} to {}: {}".format(u, v, self.shortest_paths_costs[u][v]))
 
 
 class Request(Graph):
@@ -508,14 +511,14 @@ class Request(Graph):
         if i in self.nodes:
             self.node[i]['allowed_nodes'] = allowed_nodes
         else:
-            print "Request nodes are NOT contained in request"
+            print("Request nodes are NOT contained in request")
 
     def get_allowed_nodes(self, i):
         return self.node[i]['allowed_nodes']
 
     def get_allowed_edges(self, ij):
         if ij not in self.edges:
-            print "Edge {} is NOT contained in request".format(ij)
+            print("Edge {} is NOT contained in request".format(ij))
         elif "allowed_edges" in self.edge[ij]:
             return self.edge[ij]['allowed_edges']
         return None
@@ -524,7 +527,7 @@ class Request(Graph):
         if ij in self.edges:
             self.edge[ij]['allowed_edges'] = allowed_edges
         else:
-            print "Request edge {} is NOT contained in request".format(ij)
+            print("Request edge {} is NOT contained in request".format(ij))
 
     def get_required_types(self):
         return self.types
@@ -533,19 +536,26 @@ class Request(Graph):
         if i in self.node:
             return self.node[i]["demand"]
         else:
-            print "Node {} is NOT contained in request".format(i)
+            print("Node {} is NOT contained in request".format(i))
 
     def get_type(self, i):
         if i in self.node:
             return self.node[i]["type"]
         else:
-            print "Node {} is NOT contained in request".format(i)
+            print("Node {} is NOT contained in request".format(i))
 
     def get_edge_demand(self, ij):
         if ij in self.edge:
             return self.edge[ij]["demand"]
         else:
-            print "Edge {} is NOT contained in request".format(ij)
+            global_logger.info(ij)
+            global_logger.info(self)
+            global_logger.info(self.nodes)
+            global_logger.info(self.edges)
+            global_logger.info(self.node)
+            global_logger.info(self.edge)
+            raise RuntimeError("FOOOO!")
+            print("Edge {} is NOT contained in request".format(ij))
 
     def get_nodes_by_type(self, nt):
         return [i for i in self.nodes if self.get_type(i) == nt]
@@ -606,7 +616,7 @@ class Substrate(Graph):
         super(Substrate, self).add_node(u, supported_types=types,
                                         capacity=capacity,
                                         cost=cost)
-        if isinstance(types, basestring):
+        if isinstance(types, str):
             raise SubstrateError("Types should be a list or set of strings, not a single string. ({})".format(types))
         for node_type in types:
             if node_type not in capacity:
@@ -650,7 +660,14 @@ class Substrate(Graph):
         return self.node[node]['cost'][ntype]
 
     def get_node_capacity(self, node):
-        return self.node[node]['capacity']
+        if isinstance(self.node[node]["capacity"], float):
+            return self.node[node]["capacity"]
+        else:
+            if len(self.node[node]["capacity"]) > 1:
+                raise RuntimeError("Type has to be specified when a node hosts more than one type.")
+            else:
+                value = next(iter(self.node[node]['capacity'].values()))
+                return value
 
     def get_node_type_capacity(self, node, ntype):
         return self.node[node]['capacity'].get(ntype, 0.0)
@@ -768,7 +785,7 @@ class SubstrateX(object):
         high_index = len(self._list_of_edge_resource_caps) - 1
         res_index = None
         while low_index < high_index:
-            index = (low_index + high_index) / 2
+            index = (low_index + high_index) // 2
             cap = self._list_of_edge_resource_caps[index]
             if demand > cap:
                 low_index = index + 1
@@ -794,7 +811,7 @@ class SubstrateX(object):
         high_index = len(caps) - 1
         res_index = None
         while low_index < high_index:
-            index = (low_index + high_index) / 2
+            index = (low_index + high_index) // 2
             cap = caps[index]
             if demand > cap:
                 low_index = index + 1

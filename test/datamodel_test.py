@@ -3,7 +3,7 @@ import copy
 
 import pytest
 
-from alib import datamodel
+from alib3 import datamodel
 
 
 class TestLinearRequest:
@@ -89,8 +89,8 @@ class TestScenario:
         self.request.add_edge('i1', 'i2', 2)
         self.request.add_edge('i2', 'i3', 2)
         # REQUEST TYPES
-        print "Request requires types"
-        print self.request.get_required_types()
+        print("Request requires types")
+        print(self.request.get_required_types())
         # SUBSTRATE: - NODES
         self.substrate.add_node('v1', ["FW", "DPI"], {"FW": 1, "DPI": 2}, {"FW": 1, "DPI": 1})
         self.substrate.add_node('v2', ["FW"], {"FW": 1}, {"FW": 1})
@@ -102,7 +102,7 @@ class TestScenario:
         self.substrate.add_edge('v2', 'v3')
         self.substrate.add_edge('v3', 'v4')
         self.substrate.add_edge('v4', 'v5')
-        print "Substrate offers Types", self.substrate.get_types()
+        print("Substrate offers Types", self.substrate.get_types())
         # SCENARIO
         assert self.scenario.validate_types()
 

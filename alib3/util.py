@@ -134,13 +134,13 @@ class ExperimentPathHandler(object):
         else:
             log.info("ALIB_EXPERIMENT_HOME environment variable not found")
             potential_exp_dir = os.getcwd()
-            print "current dir: {}".format(potential_exp_dir)
+            print("current dir: {}".format(potential_exp_dir))
             parent = None
             iterations = 0
             while potential_exp_dir and potential_exp_dir != parent:
                 parent = os.path.split(potential_exp_dir)[0]
-                print "current dir: {}, parent: {}".format(potential_exp_dir, parent)
-                print "{}".format(set(os.listdir(potential_exp_dir)))
+                print("current dir: {}, parent: {}".format(potential_exp_dir, parent))
+                print("{}".format(set(os.listdir(potential_exp_dir))))
                 if ({"log", "input", "output"}.issubset(set(os.listdir(potential_exp_dir)))):
                     log.info("Setting alib path according to first parent containing only input, log, output and sca folders")
                     alib_dir = potential_exp_dir
@@ -166,27 +166,27 @@ class ExperimentPathHandler(object):
 class PrintLogger(object):
     @staticmethod
     def debug(message, *args, **kwargs):
-        print message
+        print(message)
 
     @staticmethod
     def info(message, *args, **kwargs):
-        print message
+        print(message)
 
     @staticmethod
     def warning(message, *args, **kwargs):
-        print message
+        print(message)
 
     @staticmethod
     def error(message, *args, **kwargs):
-        print message
+        print(message)
 
     @staticmethod
     def critical(message, *args, **kwargs):
-        print message
+        print(message)
 
     @staticmethod
     def log(message, *args, **kwargs):
-        print message
+        print(message)
 
 
 class PrettyPrinter(object):
@@ -224,12 +224,12 @@ class PrettyPrinter(object):
 
     def _generate_lines(self, obj, depth=0, col_output_limit=None):
         if not col_output_limit:
-            col_output_limit = sys.maxint
+            col_output_limit = sys.maxsize
         self._objects_to_explore = [obj]
         while self._objects_to_explore:
             obj = self._objects_to_explore.pop()
             if depth > self.max_depth:
-                print "Maximum depth exceeded!"
+                print("Maximum depth exceeded!")
                 continue
 
             children = []
@@ -244,7 +244,7 @@ class PrettyPrinter(object):
                     header = self._get_header(depth + 1)
                     yield "{header} empty dict\n".format(header=header)
                 line = ""
-                for index, (key, value) in enumerate(obj.iteritems()):
+                for index, (key, value) in enumerate(obj.items()):
                     if index < col_output_limit:
                         if self._has_class_and_module(value):
                             header = self._get_header(depth + 1)
@@ -351,7 +351,7 @@ class PrettyPrinter(object):
     def _matches_whitelist(self, value):
 
         mod_class = self._get_module_and_class(value)
-        print "match?\n{}\n{}".format(value, mod_class)
+        print("match?\n{}\n{}".format(value, mod_class))
         # print "matches...", mod_class, self.whitelist, mod_class.split(".")
         return any(allowed_module in mod_class.split(".") for allowed_module in self.whitelist)
 
@@ -377,7 +377,7 @@ def pretty_print(obj, indentOffset=0, indentStep=2, whitelist=None, max_depth=10
 def initialize_root_logger(filename, print_level=logging.INFO, file_level=logging.DEBUG, allow_override=False):
     if not allow_override and filename is not None and os.path.exists(filename):
         raise AlibPathError("Attempted to overwrite existing log file:  {}".format(filename))
-    print "Initializing root logger: ", filename
+    print("Initializing root logger: ", filename)
     fmt = '%(levelname)-10s %(asctime)s %(lineno)4d:%(name)-32s\t %(message)s'
     logging.basicConfig(filename=filename,
                         filemode='w',
@@ -432,7 +432,7 @@ def log_start_and_end_of_function(logger=PrintLogger, start_message="Start: {f}(
                 arg_string = ", ".join(str(arg) for arg in args)
                 if kwargs:
                     arg_string += ", "
-                    arg_string += ", ".join("{}={}".format(key, arg) for key, arg in kwargs.iteritems())
+                    arg_string += ", ".join("{}={}".format(key, arg) for key, arg in kwargs.items())
             logger.info(start_message.format(f=f.__name__, args=arg_string))
             start_time = time.time()
             result = f(*args, **kwargs)
@@ -458,7 +458,7 @@ def check_percentage(value, none_allowed=True):
 def check_positive(value, none_allowed=True):
     if none_allowed and value is None:
         return
-    if not isinstance(value, (int, long, float)):
+    if not isinstance(value, (int, float)):
         raise TypeError("Expected number, got {}".format(type(value)))
     if value < 0.0:
         raise RangeError("Expected positive number, got {}".format(value))

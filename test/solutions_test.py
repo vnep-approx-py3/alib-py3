@@ -1,6 +1,6 @@
 __author__ = 'Tom Koch (tkoch@inet.tu-berlin.de)'
 
-from alib import datamodel, solutions
+from alib3 import datamodel, solutions
 
 
 class TestScenarioSolution:

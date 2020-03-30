@@ -21,7 +21,7 @@
 # SOFTWARE.
 #
 
-import cPickle as pickle
+import pickle as pickle
 from collections import deque
 import itertools
 import multiprocessing as mp
@@ -158,11 +158,11 @@ class ExecutionParameters(object):
             self.reverse_lookup[alg_id].setdefault("ALGORITHM_PARAMETERS", {})
             self.reverse_lookup[alg_id].setdefault("all", set())
             self.reverse_lookup[alg_id]["all"].add(execution_id)
-            for key, value in gurobi_params.iteritems():
+            for key, value in gurobi_params.items():
                 self.reverse_lookup[alg_id]["GUROBI_PARAMETERS"].setdefault(key, {})
                 self.reverse_lookup[alg_id]["GUROBI_PARAMETERS"][key].setdefault(value, set())
                 self.reverse_lookup[alg_id]["GUROBI_PARAMETERS"][key][value].add(execution_id)
-            for key, value in alg_params.iteritems():
+            for key, value in alg_params.items():
                 self.reverse_lookup[alg_id]["ALGORITHM_PARAMETERS"].setdefault(key, {})
                 self.reverse_lookup[alg_id]["ALGORITHM_PARAMETERS"][key].setdefault(value, set())
                 self.reverse_lookup[alg_id]["ALGORITHM_PARAMETERS"][key][value].add(execution_id)
@@ -181,7 +181,7 @@ class ExecutionParameters(object):
                                 for parameter in all_parameters))
         ]
         return [dict(combination) for combination in
-                [zip(all_parameters, product) for product in parameter_combinations]]
+                [list(zip(all_parameters, product)) for product in parameter_combinations]]
 
     def get_execution_ids(self, **kwargs):
         """ returns (suitable) execution ids filtered by **kwargs
@@ -191,20 +191,20 @@ class ExecutionParameters(object):
         """
         if kwargs is not None:
             set_exec_ids = set()
-            for i, (key, value) in enumerate(kwargs.iteritems()):
+            for i, (key, value) in enumerate(kwargs.items()):
                 set_exec_ids_single_lookup = set()
                 if key == "ALG_ID":
                     set_exec_ids_single_lookup = self.reverse_lookup[value]["all"]
                 elif key == "ALGORITHM_PARAMETERS":
-                    for algo in self.reverse_lookup.keys():
-                        for algo_para in value.keys():
-                            if self.reverse_lookup[algo]["ALGORITHM_PARAMETERS"].has_key(algo_para):
+                    for algo in list(self.reverse_lookup.keys()):
+                        for algo_para in list(value.keys()):
+                            if algo_para in self.reverse_lookup[algo]["ALGORITHM_PARAMETERS"]:
                                 result = self._helper_get_exec_id(self.reverse_lookup[algo]["ALGORITHM_PARAMETERS"][algo_para][value[algo_para]])
                                 set_exec_ids_single_lookup = set_exec_ids_single_lookup.union(result)
                 elif key == "GUROBI_PARAMETERS":
-                    for algo in self.reverse_lookup.keys():
-                        for gurobi_para in value.keys():
-                            if self.reverse_lookup[algo]["GUROBI_PARAMETERS"].has_key(gurobi_para):
+                    for algo in list(self.reverse_lookup.keys()):
+                        for gurobi_para in list(value.keys()):
+                            if gurobi_para in self.reverse_lookup[algo]["GUROBI_PARAMETERS"]:
                                 result = self._helper_get_exec_id(self.reverse_lookup[algo]["GUROBI_PARAMETERS"][gurobi_para][value[gurobi_para]])
                                 set_exec_ids_single_lookup = set_exec_ids_single_lookup.union(result)
                 if i == 0:
@@ -218,7 +218,7 @@ class ExecutionParameters(object):
         if type(parameter_dict) is set:
             return parameter_dict
         elif type(parameter_dict) is dict:
-            for key, value in parameter_dict.iteritems():
+            for key, value in parameter_dict.items():
                 result = self._helper_get_exec_id(parameter_dict[key])
                 results = results.union(result)
         return results
@@ -284,7 +284,7 @@ class ExperimentExecution(object):
         util.check_int(self.min_scenario_index, False)
         util.check_int(self.max_scenario_index, False)
 
-        for scenario_index in xrange(self.min_scenario_index, self.max_scenario_index):
+        for scenario_index in range(self.min_scenario_index, self.max_scenario_index):
 
             sp, scenario = scenario_container.scenario_triple[scenario_index]
 
@@ -317,11 +317,11 @@ class ExperimentExecution(object):
                              "Scenario {}, Alg {}, Execution {}".format(scenario_index, parameters["ALG_ID"], execution_id))
                     self.finished_tasks.append((scenario_index, execution_id))
 
-                for key, param_dict in parameters.iteritems():
+                for key, param_dict in parameters.items():
                     if key == "ALG_ID":
                         continue
                     log.debug("    {}:".format(key))
-                    for param, values in param_dict.iteritems():
+                    for param, values in param_dict.items():
                         log.debug("        {} -> {}".format(param, values))
 
         if self.shuffle_instances:
@@ -351,7 +351,7 @@ class ExperimentExecution(object):
 
         scenario = self._load_scenario(scenario_index)
 
-        for process_id, process in self.processes.iteritems():
+        for process_id, process in self.processes.items():
             if process is None:
                 extended_args = scenario_index, execution_id, parameters, scenario, process_id, self.result_queue
                 self.processes[process_id] = mp.Process(target=_execute, args=extended_args)

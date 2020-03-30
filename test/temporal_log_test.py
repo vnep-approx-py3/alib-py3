@@ -1,6 +1,6 @@
 import timeit
 
-from alib import util, modelcreator
+from alib3 import util, modelcreator
 
 
 class TestTemporalLog:

@@ -138,7 +138,7 @@ def gurobi_callback(model, where):
                 mc.logger.debug(line)
 
     except Exception:
-        print sys.exc_info()[0]
+        print(sys.exc_info()[0])
         traceback.print_exc()
 
 
@@ -227,7 +227,7 @@ def build_construct_name(spec):
                 name += "_{}[{}]".format(prefix, formatter(value))
         if kwargs:
             raise TypeError("{}() got an unexpected keyword argument '{}'".format(
-                _construct_name.__name__, kwargs.keys()[0]))
+                _construct_name.__name__, list(kwargs.keys())[0]))
         return name.replace(" ", "")
 
     _construct_name.spec = extended_spec
@@ -496,7 +496,7 @@ class AbstractModelCreator(object):
         :return:
         '''
 
-        time_preprocess_start = time.clock()
+        time_preprocess_start = time.perf_counter()
 
         self.model = gurobipy.Model("test")
         self.model._mc = self
@@ -518,7 +518,7 @@ class AbstractModelCreator(object):
         self.create_objective()
         self.model.update()
 
-        self.time_preprocess = time.clock() - time_preprocess_start
+        self.time_preprocess = time.perf_counter() - time_preprocess_start
 
     def preprocess_input(self):
         raise NotImplementedError("This is an abstract method! Use one of the implementations.")
@@ -540,17 +540,17 @@ class AbstractModelCreator(object):
         '''
         self.logger.debug("Computing integral solution.")
         # do the optimization
-        time_optimization_start = time.clock()
+        time_optimization_start = time.perf_counter()
         self.model.optimize(self.optimization_callback)
 
-        self.time_optimization = time.clock() - time_optimization_start
+        self.time_optimization = time.perf_counter() - time_optimization_start
 
         #the following shall not be counted to any runtime
         if self.lp_output_file is not None:
             self.model.write(self.lp_output_file)
 
         # do the postprocessing
-        self._time_postprocess_start = time.clock()
+        self._time_postprocess_start = time.perf_counter()
         gurobi_status = self.model.getAttr("Status")
         objVal = None
         objBound = GRB.INFINITY
@@ -601,7 +601,7 @@ class AbstractModelCreator(object):
             self.model.computeIIS()
             self.model.write(self.potential_iis_filename)
 
-        self.time_postprocessing = time.clock() - self._time_postprocess_start
+        self.time_postprocessing = time.perf_counter() - self._time_postprocess_start
 
         if not self._disable_temporal_information_output:
             self.logger.debug("Preprocessing time:   {}".format(self.time_preprocess))
@@ -623,17 +623,17 @@ class AbstractModelCreator(object):
         :return:    GurobiStatus together with a class corresponding to the solution computed in the LP
         '''
 
-        time_additional_preprocessing_start = time.clock()
+        time_additional_preprocessing_start = time.perf_counter()
         self.relax_model()
-        self.time_preprocess = self.time_preprocess + (time.clock() - time_additional_preprocessing_start)
+        self.time_preprocess = self.time_preprocess + (time.perf_counter() - time_additional_preprocessing_start)
 
         # do the optimization
-        time_optimization_start = time.clock()
+        time_optimization_start = time.perf_counter()
         self.model.optimize(self.optimization_callback)
-        self.time_optimization = time.clock() - time_optimization_start
+        self.time_optimization = time.perf_counter() - time_optimization_start
 
         # do the postprocessing
-        self._time_postprocess_start = time.clock()
+        self._time_postprocess_start = time.perf_counter()
 
         status = self.model.getAttr("Status")
         objVal = None
@@ -662,7 +662,7 @@ class AbstractModelCreator(object):
             self.model.computeIIS()
             self.model.write(self.potential_iis_filename)
 
-        self.time_postprocessing = time.clock() - self._time_postprocess_start
+        self.time_postprocessing = time.perf_counter() - self._time_postprocess_start
 
         if not self._disable_temporal_information_output:
             self.logger.debug("Preprocessing time:   {}".format(self.time_preprocess))

@@ -1,6 +1,6 @@
 __author__ = 'Tom Koch (tkoch@inet.tu-berlin.de)'
 
-from alib import datamodel, mip
+from alib3 import datamodel, mip
 
 
 class TestModelCreator:
