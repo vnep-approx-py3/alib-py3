@@ -8,8 +8,7 @@ import yaml
 
 import numpy
 
-from alib3 import scenariogeneration, datamodel, util
-from test import test_utils
+from alib3 import scenariogeneration, datamodel, util, test_utils
 import pytest
 
 TEST_BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -27,7 +26,6 @@ def check_and_create_log_diretory(request):
 
         def remove_log_directory():
             if _log_directory is not None:
-                import shutil
                 print(("\n\nGoing to remove directory {}..".format(_log_directory)))
                 for logfile in glob.glob(_log_directory + "/*.log"):
                     print(("\tremoving file {}..".format(logfile)))

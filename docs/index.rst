@@ -14,6 +14,7 @@ Welcome to alib's documentation!
   alib3/scenariogeneration
   alib3/solutions
   alib3/util
+  alib3/test_utils
 
 .. only:: builder_html
 
