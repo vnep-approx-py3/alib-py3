@@ -75,7 +75,7 @@ class SuitableSubstrates(object):
 
 #changed here for server subserver architecture - added ../../       !!!!!
 def unpickle_suitable_substrates(path= "input/suitable_substrates.json", prefix=""):
-    with open(os.getcwd() + "/" + prefix + path) as f:
+    with open(os.getcwd() + "/" + prefix + path, "r") as f:
         suitable_substrates = jsonpickle.decode(f.read(), keys=True)
     return suitable_substrates
 
@@ -86,7 +86,7 @@ def pickle_suitable_substrates(suitable_substrates, path= "input/suitable_substr
         f.write(jsonpickle.encode(suitable_substrates, keys=True))
 
 def unpickle_pruned_suitable_substrates(path="input/pruned_suitable_substrates.json"):
-    with open(os.getcwd() + "/" + path) as f:
+    with open(os.getcwd() + "/" + path, "r") as f:
         suitable_substrates = jsonpickle.decode(f.read(), keys=True)
     return suitable_substrates
 
