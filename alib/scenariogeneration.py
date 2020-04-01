@@ -1773,7 +1773,7 @@ class TopologyZooReader(ScenariogenerationTask):
 
     def read_from_yaml(self, raw_parameters, include_location=False):
         topology = raw_parameters["topology"]
-        with open(os.path.abspath(os.path.join(self.topology_zoo_dir, topology + ".yml"))) as f:
+        with open(os.path.abspath(os.path.join(self.topology_zoo_dir, topology + ".yml")), "r") as f:
             graph_dict = yaml.safe_load(f)
 
         nodes = list(graph_dict["nodes"].keys())

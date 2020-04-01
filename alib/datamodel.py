@@ -273,7 +273,7 @@ class UndirectedGraphStorage(object):
 
     def load_from_pickle(self, pickle_path):
         other_undirected_graph_storage = None
-        with open(pickle_path, "r") as f:
+        with open(pickle_path, "rb") as f:
             other_undirected_graph_storage = pickle.load(f)
 
         self.parameter_name = other_undirected_graph_storage.parameter_name

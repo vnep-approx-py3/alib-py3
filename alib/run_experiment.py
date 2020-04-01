@@ -92,7 +92,7 @@ def run_experiment(experiment_yaml_file,
         remove_temporary_scenarios=remove_temporary_scenarios,
         remove_intermediate_solutions=remove_intermediate_solutions
     )
-    exp_data = yaml.load(experiment_yaml_file)
+    exp_data = yaml.load(experiment_yaml_file, Loader=yaml.SafeLoader)
     scenario_picklefile = os.path.abspath(os.path.join(
         util.ExperimentPathHandler.INPUT_DIR, exp_data["SCENARIO_INPUT_PICKLE"])
     )
@@ -296,7 +296,7 @@ class ExperimentExecution(object):
 
             scenario_filename = self._get_scenario_pickle_filename(scenario_index)
             if not os.path.exists(scenario_filename) or not self.overwrite_existing_temporary_scenarios:
-                with open(scenario_filename, "w") as f:
+                with open(scenario_filename, "wb") as f:
                     pickle.dump(scenario, f)
             self.created_temporary_scenario_files.append(scenario_filename)
 
@@ -445,7 +445,7 @@ class ExperimentExecution(object):
 
     def _load_scenario_container(self):
         scenario_container = None
-        with open(self.scenario_picklefile, "r") as f:
+        with open(self.scenario_picklefile, "rb") as f:
             scenario_container = pickle.load(f)
         return scenario_container
 
