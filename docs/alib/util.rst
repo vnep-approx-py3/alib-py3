@@ -1,6 +1,6 @@
-``alib3.util``
+``alib.util``
 =============
 
-.. automodule:: alib3.util
+.. automodule:: alib.util
   :members:
   :undoc-members:

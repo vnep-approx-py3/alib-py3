@@ -1,7 +1,7 @@
 
 # Overview
 
-The **alib** (short for **a library**) provides a common **Python 2.7** basis for our **Virtual Network Embedding Problem (VNEP)** approximation framework. As such, it contains (among other things) 
+The **alib** (short for **a library**) provides a common **Python 3.X** basis for our **Virtual Network Embedding Problem (VNEP)** approximation framework. As such, it contains (among other things) 
 - A common **[data model](alib/datamodel.py)** to capture the notions of **substrate graphs** (physical networks), **request graphs** (virtual networks), and **embeddings** of requests to a substrate, **scenarios**, i.e. bundling multiple requests to be embedded on a common substrate.
 - A common **[scenario generation](alib/scenariogeneration.py)** framework to generate cartesian products of parameter spaces and to generate scenarios accordingly (at random).
 - A common **[scenario execution](alib/run_experiment.py)** framework to execute experments in parallel and using arbitrarily many different parameter configurations.
@@ -9,9 +9,7 @@ The **alib** (short for **a library**) provides a common **Python 2.7** basis fo
 
 # Dependencies and Requirements
 
-The alib library requires Python 2.7. Required python libraries: gurobipy, numpy, cPickle, networkx 1.9, matplotlib. 
-
-Note: Unfortunately, newer versions of networkx cannot parse many of the topology zoo's \*.gml files. This problem can be avoided by downgrading to networkx 1.9 ("(sudo) pip install networkx==1.9"), or by removing certain node annotations and any duplicate edges from the \*.gml files.
+The alib library requires Python 3.X. Required python libraries: gurobipy, numpy, cPickle, networkx 1.9, matplotlib. 
 
 Gurobi must be installed and the .../gurobi64/lib directory added to the environment variable LD_LIBRARY_PATH.
 

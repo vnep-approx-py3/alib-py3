@@ -26,7 +26,7 @@ Some convenience functions to generate simple, artificial substrate and request
 graphs and scenarios for testing purposes.
 """
 
-from alib3 import datamodel, scenariogeneration
+from alib import datamodel, scenariogeneration
 
 
 def get_clique_request(number_of_nodes, name="test_request", demand=1.0):

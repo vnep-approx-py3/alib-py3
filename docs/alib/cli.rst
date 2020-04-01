@@ -1,6 +1,6 @@
-``alib3.cli``
+``alib.cli``
 ==================
 
-.. automodule:: alib3.cli
+.. automodule:: alib.cli
   :members:
   :undoc-members:

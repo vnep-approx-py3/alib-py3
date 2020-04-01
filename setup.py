@@ -13,14 +13,14 @@ install_requires = [
 ]
 
 setup(
-    name="alib3",
+    name="alib",
     python_requires=">=3.7",
-    packages=["alib3"],
-    package_data={"alib3": ["data/topologyZoo/*.yml"]},
+    packages=["alib"],
+    package_data={"alib": ["data/topologyZoo/*.yml"]},
     install_requires=install_requires,
     entry_points={
         "console_scripts": [
-            "alib3 = alib3.cli:cli",
+            "alib = alib.cli:cli",
         ]
     }
 )

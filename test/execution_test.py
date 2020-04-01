@@ -1,4 +1,4 @@
-from alib3 import run_experiment
+from alib import run_experiment
 
 
 class TestExecutionParameter:

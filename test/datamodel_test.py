@@ -3,7 +3,7 @@ import copy
 
 import pytest
 
-from alib3 import datamodel
+from alib import datamodel
 
 
 class TestLinearRequest:

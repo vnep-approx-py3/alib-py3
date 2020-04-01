@@ -54,7 +54,7 @@ numpy.random.seed(1234)
 
 UNIVERSAL_NODE_TYPE = "universal"
 
-DATA_PATH = pkg_resources.resource_filename("alib3", "data/")
+DATA_PATH = pkg_resources.resource_filename("alib", "data/")
 
 
 class RequestGenerationError(Exception): pass
