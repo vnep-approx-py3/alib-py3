@@ -92,7 +92,7 @@ def run_experiment(experiment_yaml_file,
         remove_temporary_scenarios=remove_temporary_scenarios,
         remove_intermediate_solutions=remove_intermediate_solutions
     )
-    exp_data = yaml.load(experiment_yaml_file, Loader=yaml.SafeLoader)
+    exp_data = yaml.load(experiment_yaml_file, Loader=yaml.FullLoader)
     scenario_picklefile = os.path.abspath(os.path.join(
         util.ExperimentPathHandler.INPUT_DIR, exp_data["SCENARIO_INPUT_PICKLE"])
     )
