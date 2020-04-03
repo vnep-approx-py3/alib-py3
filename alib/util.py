@@ -378,23 +378,21 @@ def initialize_root_logger(filename, print_level=logging.INFO, file_level=loggin
     if not allow_override and filename is not None and os.path.exists(filename):
         raise AlibPathError("Attempted to overwrite existing log file:  {}".format(filename))
     print("Initializing root logger: ", filename)
-    fmt = '%(levelname)-10s %(asctime)s %(lineno)4d:%(name)-32s\t %(message)s'
-    logging.basicConfig(filename=filename,
-                        filemode='w',
-                        level=file_level,
-                        format=fmt)
+
+    if filename is not None:
+        fmt = '%(levelname)-10s %(asctime)s %(lineno)4d:%(name)-32s\t %(message)s'
+        logging.basicConfig(filename=filename,
+                            filemode='w',
+                            level=file_level,
+                            format=fmt)
 
     root_logger = logging.getLogger()
 
-    # # This code breaks in weird ways:
-    # file_handler = logging.FileHandler(filename, mode="w")
-    # file_handler.setLevel(file_level)
-    # file_handler.setFormatter(fmt)
-    # root_logger.addHandler(file_level)
+    if print_level is not None:
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler.setLevel(print_level)
+        root_logger.addHandler(stdout_handler)
 
-    stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setLevel(print_level)
-    root_logger.addHandler(stdout_handler)
     root_logger.info("Initialized Root Logger")
 
 
