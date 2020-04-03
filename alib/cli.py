@@ -48,7 +48,7 @@ def initialize_logger(filename, log_level_print, log_level_file, allow_override=
     util.initialize_root_logger(filename, log_level_print, log_level_file, allow_override=allow_override)
 
 
-@cli.command()
+@cli.command("generate-scenarios", short_help="generates scenarios according to a yaml file")
 @click.argument('scenario_output_file')
 @click.argument('parameters', type=click.File('r'))
 @click.option('--threads', default=1)
@@ -78,8 +78,8 @@ def f_generate_scenarios(scenario_output_file, parameter_file, threads, scenario
     scenariogeneration.generate_pickle_from_yml(parameter_file, scenario_output_file, threads, scenario_index_offset=scenario_index_offset)
 
 
-@cli.command()
-@click.argument('pickle_file', type=click.File('r'))
+@cli.command("pretty-print", short_help="outputs a textual representation of the contents of a pickle file")
+@click.argument('pickle_file', type=click.File('rb'))
 @click.option('--col_output_limit', default=None)
 def pretty_print(pickle_file, col_output_limit):
     data = pickle.load(pickle_file)
@@ -87,7 +87,7 @@ def pretty_print(pickle_file, col_output_limit):
     print(pp.pprint(data, col_output_limit=col_output_limit))
 
 
-@cli.command()
+@cli.command("start-experiment", short_help="starts an experiment specified in a yaml file")
 @click.argument('experiment_yaml', type=click.File('r'))
 @click.argument('min_scenario_index', type=click.INT)
 @click.argument('max_scenario_index', type=click.INT)
@@ -167,7 +167,7 @@ def f_start_experiment(experiment_yaml,
     )
 
 
-@cli.command()
+@cli.command("inspect-cactus-graphs", short_help="outputs charactistics of cactus graph generation given a yaml-specification")
 @click.argument('yaml_file_with_cacus_request_graph_definition', type=click.Path())
 @click.option('--iterations', type=click.INT, default=100000)
 def inspect_cactus_request_graph_generation(yaml_file_with_cacus_request_graph_definition,
@@ -321,7 +321,7 @@ def f_inspect_specfic_cactus_request_graph_generation_and_output(name, raw_param
         # print edge_count_per_node
 
 
-@cli.command()
+@cli.command("merge-sss", short_help="merges two scenario solution storage (sss) objects")
 @click.argument('sss_pickle_file_1', type=click.Path(exists=True, dir_okay=False))
 @click.argument('sss_pickle_file_2', type=click.Path(exists=True, dir_okay=False))
 @click.argument('output', type=click.Path(exists=False, dir_okay=False))
@@ -344,7 +344,7 @@ def f_merge_sss(sss_pickle_file_1, sss_pickle_file_2, output):
         pickle.dump(sss_1, f)
 
 
-@cli.command()
+@cli.command("merge-scenario-containers", short_help="merges two scenario container pickle files")
 @click.argument('scenario_container_pickle_file_1', type=click.Path(exists=True, dir_okay=False))
 @click.argument('scenario_container_pickle_file_2', type=click.Path(exists=True, dir_okay=False))
 @click.argument('output', type=click.Path(exists=False, dir_okay=False))
@@ -367,14 +367,14 @@ def f_merge_scenario_containers(scenario_container_pickle_file_1, scenario_conta
         pickle.dump(scenario_container_1, f)
 
 
-@cli.command()
+@cli.command("summarize-toopology-zoo-graphs", short_help="summarizes characteristics of topology graphs contained")
 @click.option('--min_number_nodes', type=click.INT, default=10)
 @click.option('--max_number_nodes', type=click.INT, default=100000)
 def summarize_topology_zoo_graphs(min_number_nodes, max_number_nodes):
     scenariogeneration.summarize_topology_zoo_graphs(min_number_nodes, max_number_nodes)
 
 
-@cli.command()
+@cli.command("convert-topology-zoo-gml-to-yml", short_help="converts original topology zoo graphs in the GML format to our yml representation")
 @click.argument('gml_path', type=click.Path())
 @click.argument('yml_path', type=click.Path())
 @click.option('--consider_disconnected/--discard_disconnected', default="True")
