@@ -449,8 +449,9 @@ def build_scenario(i_sp_tup):
             pc.apply(sp, scenario)
             scenario.objective = datamodel.Objective.MAX_PROFIT
     except Exception as e:
-        with open("log/{}_error.log".format(os.getpid()), "w") as f:
+        with open("{}_error.log".format(os.getpid()), "w") as f:
             import traceback
+            logger.error(traceback.format_exc(e))
             traceback.print_exc(file=f)
     return i, scenario, sp
 
@@ -1452,7 +1453,7 @@ class TreewidthRequestGenerator(AbstractRequestGenerator):
         if self.DEBUG_MODE:
             # check connectedness of request graph; the functionality is included in the vnep_approx3
             try:
-                from vnep_approx3 import treewidth_model
+                from vnep_approx import treewidth_model
                 tmp_edges = list(req.edges)
                 tmp_undir_req_graph = datamodel.get_undirected_graph_from_edge_representation(tmp_edges)
                 assert tmp_undir_req_graph.check_connectedness()
@@ -1466,7 +1467,7 @@ class TreewidthRequestGenerator(AbstractRequestGenerator):
                 self.logger.info("SUCCESSFULLY PASSED TESTS [DEBUG_MODE=TRUE]")
                 assert len(req.nodes) == self._number_of_nodes
             except Exception as e:
-                warnings.warn("Could (probably) not load the vnep_approx3 library even though the debug mode is enabled. Please install the vnep_approx3 library or check the following stacktrace for any other exception.\n{}".format(traceback.format_exc()))
+                warnings.warn("Could (probably) not load the vnep_approx library even though the debug mode is enabled. Please install the vnep_approx library or check the following stacktrace for any other exception.\n{}".format(traceback.format_exc()))
         return req
 
     def _abort(self):
