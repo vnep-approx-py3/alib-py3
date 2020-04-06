@@ -1,4 +1,3 @@
-
 # Overview
 
 The **alib** (short for **a library**) provides a common **Python 3.X** basis for our **Virtual Network Embedding Problem (VNEP)** approximation framework. It is based on the original **Python 2.7** framework that is also hosted on **[Github at https://github.com/vnep-approx/alib](https://github.com/vnep-approx/alib)**.
